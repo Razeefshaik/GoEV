@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: goev-server
+  datasource:
+    url: jdbc:postgresql://localhost:5432/goev
+    username: goev
+    password: goev
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+goev:
+  mqtt:
+    broker-url: tcp://localhost:1883
+    client-id: goev-server
+    ev-status-topic: ev/+/status
+    ev-request-topic: ev/+/request
+    evcs-status-topic: evcs/+/status
+    qos-heartbeat: 0
+    qos-state-change: 1
+  state:
+    ev-ttl-seconds: 90
+    evcs-ttl-seconds: 90

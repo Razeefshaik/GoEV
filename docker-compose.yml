@@ -1,0 +1,24 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: goev-mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  redis:
+    image: redis:7-alpine
+    container_name: goev-redis
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: goev-postgres
+    environment:
+      POSTGRES_DB: goev
+      POSTGRES_USER: goev
+      POSTGRES_PASSWORD: goev
+    ports:
+      - "5432:5432"
