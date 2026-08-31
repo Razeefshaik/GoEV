@@ -22,6 +22,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
+import com.goev.ev.EvRepository;
+import com.goev.evcs.EvcsRepository;
 import com.goev.mqtt.ChargeRequestMessage;
 import com.goev.mqtt.EvStatusMessage;
 import com.goev.mqtt.EvcsStatusMessage;
@@ -85,6 +87,12 @@ class StateServiceIntegrationTest {
     @Autowired
     private ChargeRequestRepository chargeRequestRepository;
 
+    @Autowired
+    private EvcsRepository evcsRepository;
+
+    @Autowired
+    private EvRepository evRepository;
+
     @Test
     void evHeartbeatIsReadableThenExpiresAfterTtl() {
         stateService.onEvStatus(new EvStatusMessage(
@@ -114,5 +122,31 @@ class StateServiceIntegrationTest {
 
         assertThat(chargeRequestRepository.findById(requestId))
                 .hasValueSatisfying(req -> assertThat(req.getEvId()).isEqualTo("EV-02"));
+    }
+
+    @Test
+    void firstEvcsHeartbeatAutoRegistersADurableEvcsRow() {
+        stateService.onEvcsStatus(new EvcsStatusMessage(
+                "EVCS-AUTO", 12, List.of("ccs"), 2, 0, 50.0, 0.0));
+
+        assertThat(evcsRepository.findById("EVCS-AUTO"))
+                .hasValueSatisfying(evcs -> assertThat(evcs.getBusId()).isEqualTo(12));
+
+        // A second heartbeat must not overwrite/duplicate the durable row.
+        stateService.onEvcsStatus(new EvcsStatusMessage(
+                "EVCS-AUTO", 12, List.of("ccs"), 1, 0, 50.0, 10.0));
+        assertThat(evcsRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void firstChargeRequestAutoRegistersADurableEvRow() {
+        stateService.onChargeRequest(new ChargeRequestMessage(
+                UUID.randomUUID(), "EV-AUTO", Instant.now(), new Location("bus_3", 0.0),
+                60.0, 45.0, "compact_l2_ccs", "no_passenger", 5.0));
+
+        assertThat(evRepository.findById("EV-AUTO")).hasValueSatisfying(ev -> {
+            assertThat(ev.getEvModel()).isEqualTo("compact_l2_ccs");
+            assertThat(ev.getBatteryCapacityKwh()).isEqualTo(45.0);
+        });
     }
 }

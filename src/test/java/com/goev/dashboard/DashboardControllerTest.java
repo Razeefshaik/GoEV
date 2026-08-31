@@ -34,7 +34,7 @@ class DashboardControllerTest {
         ResponseEntity<String> response = restTemplate.getForEntity("/", String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).contains("GoEV Dashboard");
+        assertThat(response.getBody()).contains("GoEV Live Dashboard");
     }
 
     @Test

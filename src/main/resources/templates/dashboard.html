@@ -2,111 +2,396 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>GoEV Dashboard</title>
+    <title>GoEV Live Dashboard</title>
     <style>
-        body { font-family: system-ui, sans-serif; margin: 2rem; background: #f7f7f9; color: #1a1a1a; }
-        h1 { margin-bottom: 0.25rem; }
-        .status { font-size: 0.85rem; color: #666; margin-bottom: 1.5rem; }
-        .status.connected { color: #1a7f37; }
-        .status.disconnected { color: #b91c1c; }
-        section { margin-bottom: 2rem; }
-        h2 { font-size: 1.05rem; border-bottom: 1px solid #ddd; padding-bottom: 0.4rem; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid #eee; font-size: 0.9rem; }
-        th { background: #efefef; }
-        tr.stale { opacity: 0.45; }
-        .reason-code.ok { color: #1a7f37; }
-        .reason-code.rejected { color: #b91c1c; }
-        .empty { color: #999; font-style: italic; padding: 0.6rem; }
+        :root {
+            --bg: #f4f6f9;
+            --card: #ffffff;
+            --border: #e2e6ec;
+            --text: #1a1f2b;
+            --muted: #6b7280;
+            --accent: #2563eb;
+            --green: #16a34a;
+            --amber: #d97706;
+            --red: #dc2626;
+            --line: #b9c2d0;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+        }
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.75rem;
+            background: linear-gradient(120deg, #111827, #1f3a8a);
+            color: white;
+        }
+        header h1 { margin: 0; font-size: 1.35rem; font-weight: 600; }
+        header .tagline { font-size: 0.8rem; opacity: 0.8; margin-top: 0.15rem; }
+        #connectionStatus {
+            font-size: 0.8rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.12);
+        }
+        #connectionStatus.connected { background: rgba(22,163,74,0.25); }
+        #connectionStatus.disconnected { background: rgba(220,38,38,0.3); }
+
+        main {
+            display: grid;
+            grid-template-columns: minmax(0, 2.1fr) minmax(320px, 1fr);
+            gap: 1.25rem;
+            padding: 1.25rem 1.75rem 2rem;
+            align-items: start;
+        }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.1rem;
+            box-shadow: 0 1px 2px rgba(16,24,40,0.04);
+        }
+        .card h2 {
+            margin: 0 0 0.75rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .card h2 .count { color: var(--muted); font-weight: 400; }
+
+        #networkCard { position: relative; }
+        #networkSvg { width: 100%; height: auto; display: block; }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.9rem;
+            margin-top: 0.75rem;
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+        .legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+        .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+        .side-stack { display: flex; flex-direction: column; gap: 1.25rem; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        th, td { text-align: left; padding: 0.35rem 0.4rem; border-bottom: 1px solid #f0f1f4; }
+        th { color: var(--muted); font-weight: 500; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; }
+        .empty-row td { color: var(--muted); font-style: italic; padding: 0.5rem 0.4rem; }
+        .reason-ok { color: var(--green); font-weight: 600; }
+        .reason-rejected { color: var(--red); font-weight: 600; }
+        .scroll-body { max-height: 220px; overflow-y: auto; }
+
+        .bus-dot { fill: #ffffff; stroke: var(--line); stroke-width: 1.5; }
+        .bus-label { font-size: 9px; fill: var(--muted); text-anchor: middle; }
+        .grid-line { stroke: var(--line); stroke-width: 1.4; }
+        .evcs-marker { stroke: white; stroke-width: 1.2; cursor: default; }
+        .ev-marker { stroke: white; stroke-width: 1; cursor: default; }
+        .assign-path {
+            fill: none;
+            stroke: var(--accent);
+            stroke-width: 2.4;
+            stroke-dasharray: 6 4;
+            opacity: 0.9;
+            animation: dash 1s linear infinite;
+        }
+        .reject-flash {
+            fill: none;
+            stroke: var(--red);
+            stroke-width: 3;
+            opacity: 0.85;
+        }
+        @keyframes dash { to { stroke-dashoffset: -20; } }
+        @keyframes fadeOut { from { opacity: 0.9; } to { opacity: 0; } }
+        .fading { animation: fadeOut 1.4s ease-out forwards; }
     </style>
 </head>
 <body>
-<h1>GoEV Dashboard</h1>
-<div id="connectionStatus" class="status disconnected">Connecting…</div>
+<header>
+    <div>
+        <h1>GoEV — Live EV ⇄ EVCS Routing</h1>
+        <div class="tagline">28-bus distribution network · live MQTT feed via STOMP</div>
+    </div>
+    <div id="connectionStatus" class="disconnected">Connecting…</div>
+</header>
 
-<section>
-    <h2>EVs (live status)</h2>
-    <table>
-        <thead><tr><th>EV ID</th><th>Location</th><th>SOC %</th><th>Willingness</th><th>Last seen</th></tr></thead>
-        <tbody id="evTableBody"></tbody>
-    </table>
-</section>
+<main>
+    <div class="card" id="networkCard">
+        <h2>Distribution network</h2>
+        <svg id="networkSvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="legend">
+            <span><span class="swatch" style="background:#16a34a"></span>EVCS — slot free</span>
+            <span><span class="swatch" style="background:#d97706"></span>EVCS — queued only</span>
+            <span><span class="swatch" style="background:#9ca3af"></span>EVCS — offline / full</span>
+            <span><span class="swatch" style="background:#2563eb"></span>EV</span>
+            <span><span class="swatch" style="background:#2563eb;border-radius:50%"></span>Live assignment (dashed)</span>
+            <span><span class="swatch" style="background:#dc2626"></span>Rejected request</span>
+        </div>
+    </div>
 
-<section>
-    <h2>EVCS stations (live status)</h2>
-    <table>
-        <thead><tr><th>EVCS ID</th><th>Bus</th><th>Connectors</th><th>Available / Queue</th><th>Load (kW)</th></tr></thead>
-        <tbody id="evcsTableBody"></tbody>
-    </table>
-</section>
+    <div class="side-stack">
+        <div class="card">
+            <h2>EVs <span class="count" id="evCount"></span></h2>
+            <div class="scroll-body">
+                <table>
+                    <thead><tr><th>ID</th><th>Bus</th><th>SOC%</th><th>Mode</th></tr></thead>
+                    <tbody id="evTableBody"></tbody>
+                </table>
+            </div>
+        </div>
 
-<section>
-    <h2>Recent assignments</h2>
-    <table>
-        <thead><tr><th>EV</th><th>EVCS</th><th>Distance (km)</th><th>ETA (min)</th><th>Reason</th><th>Resolved at</th></tr></thead>
-        <tbody id="assignmentsTableBody"></tbody>
-    </table>
-</section>
+        <div class="card">
+            <h2>EVCS stations <span class="count" id="evcsCount"></span></h2>
+            <div class="scroll-body">
+                <table>
+                    <thead><tr><th>ID</th><th>Bus</th><th>Free/Queue</th><th>kW</th></tr></thead>
+                    <tbody id="evcsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Recent assignments <span class="count" id="assignCount"></span></h2>
+            <div class="scroll-body">
+                <table>
+                    <thead><tr><th>EV</th><th>EVCS</th><th>km</th><th>ETA</th><th>Reason</th></tr></thead>
+                    <tbody id="assignmentsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
 
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
-<script th:inline="javascript">
+<script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const LEVEL_HEIGHT = 60;
+    const LEAF_SPACING = 70;
+    const MARGIN = 40;
+
     const evRows = new Map();
     const evcsRows = new Map();
     const assignments = [];
+    let busPositions = new Map();
+    let evcsByBus = new Map();
 
     function fmtTime(iso) {
         if (!iso) return '';
         return new Date(iso).toLocaleTimeString();
     }
 
+    // ---- tree layout of the radial network (27 lines / 28 buses = a spanning tree) ----
+    function layoutTree(topology) {
+        const childrenOf = new Map();
+        topology.buses.forEach(b => childrenOf.set(b.busId, []));
+        topology.lines.forEach(l => childrenOf.get(l.seBus).push(l.reBus));
+
+        const parentOf = new Map();
+        topology.lines.forEach(l => parentOf.set(l.reBus, l.seBus));
+        const root = topology.buses.map(b => b.busId).find(id => !parentOf.has(id));
+
+        const positions = new Map();
+        let leafCounter = 0;
+
+        function place(busId, depth) {
+            const children = childrenOf.get(busId) || [];
+            if (children.length === 0) {
+                positions.set(busId, { x: leafCounter, y: depth });
+                leafCounter += 1;
+                return positions.get(busId).x;
+            }
+            const xs = children.map(c => place(c, depth + 1));
+            const x = xs.reduce((a, b) => a + b, 0) / xs.length;
+            positions.set(busId, { x, y: depth });
+            return x;
+        }
+        place(root, 0);
+
+        const maxDepth = Math.max(...Array.from(positions.values()).map(p => p.y));
+        const scaled = new Map();
+        positions.forEach((p, busId) => {
+            scaled.set(busId, {
+                x: MARGIN + p.x * LEAF_SPACING,
+                y: MARGIN + p.y * LEVEL_HEIGHT
+            });
+        });
+        return { positions: scaled, width: MARGIN * 2 + leafCounter * LEAF_SPACING, height: MARGIN * 2 + maxDepth * LEVEL_HEIGHT };
+    }
+
+    function drawNetwork(topology) {
+        const layout = layoutTree(topology);
+        busPositions = layout.positions;
+
+        const svg = document.getElementById('networkSvg');
+        svg.setAttribute('viewBox', `0 0 ${layout.width} ${layout.height}`);
+        svg.innerHTML = '';
+
+        const linesGroup = document.createElementNS(SVG_NS, 'g');
+        topology.lines.forEach(l => {
+            const a = busPositions.get(l.seBus), b = busPositions.get(l.reBus);
+            if (!a || !b) return;
+            const line = document.createElementNS(SVG_NS, 'line');
+            line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+            line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+            line.setAttribute('class', 'grid-line');
+            linesGroup.appendChild(line);
+        });
+        svg.appendChild(linesGroup);
+
+        const busGroup = document.createElementNS(SVG_NS, 'g');
+        topology.buses.forEach(bus => {
+            const p = busPositions.get(bus.busId);
+            if (!p) return;
+            const dot = document.createElementNS(SVG_NS, 'circle');
+            dot.setAttribute('cx', p.x); dot.setAttribute('cy', p.y);
+            dot.setAttribute('r', 3.2);
+            dot.setAttribute('class', 'bus-dot');
+            busGroup.appendChild(dot);
+
+            const label = document.createElementNS(SVG_NS, 'text');
+            label.setAttribute('x', p.x); label.setAttribute('y', p.y - 6);
+            label.setAttribute('class', 'bus-label');
+            label.textContent = bus.busId;
+            busGroup.appendChild(label);
+        });
+        svg.appendChild(busGroup);
+
+        svg.appendChild(document.createElementNS(SVG_NS, 'g')).setAttribute('id', 'evcsLayer');
+        svg.appendChild(document.createElementNS(SVG_NS, 'g')).setAttribute('id', 'evLayer');
+        svg.appendChild(document.createElementNS(SVG_NS, 'g')).setAttribute('id', 'fxLayer');
+    }
+
+    function evcsColor(evcs) {
+        if (evcs.availableSlots > 0) return '#16a34a';
+        if ((evcs.queueLength ?? 0) > 0) return '#d97706';
+        return '#9ca3af';
+    }
+
+    function socColor(soc) {
+        if (soc == null) return '#2563eb';
+        if (soc < 20) return '#dc2626';
+        if (soc < 50) return '#d97706';
+        return '#2563eb';
+    }
+
+    function redrawOverlays() {
+        const svg = document.getElementById('networkSvg');
+        const evcsLayer = svg.querySelector('#evcsLayer');
+        const evLayer = svg.querySelector('#evLayer');
+        if (!evcsLayer || !evLayer) return;
+
+        evcsLayer.innerHTML = '';
+        evcsByBus = new Map();
+        evcsRows.forEach(evcs => {
+            const p = busPositions.get(evcs.busId);
+            if (!p) return;
+            evcsByBus.set(evcs.evcsId, evcs.busId);
+            const rect = document.createElementNS(SVG_NS, 'rect');
+            rect.setAttribute('x', p.x + 5); rect.setAttribute('y', p.y - 5);
+            rect.setAttribute('width', 8); rect.setAttribute('height', 8);
+            rect.setAttribute('rx', 2);
+            rect.setAttribute('fill', evcsColor(evcs));
+            rect.setAttribute('class', 'evcs-marker');
+            const title = document.createElementNS(SVG_NS, 'title');
+            title.textContent = `${evcs.evcsId} — ${evcs.availableSlots ?? '?'} free / ${evcs.queueLength ?? '?'} queued`;
+            rect.appendChild(title);
+            evcsLayer.appendChild(rect);
+        });
+
+        evLayer.innerHTML = '';
+        const seenAtBus = new Map();
+        evRows.forEach(ev => {
+            const busId = ev.location ? parseInt(ev.location.nodeRef.replace('bus_', ''), 10) : null;
+            const p = busId != null ? busPositions.get(busId) : null;
+            if (!p) return;
+            const n = seenAtBus.get(busId) || 0;
+            seenAtBus.set(busId, n + 1);
+            const jitter = (n % 3) * 4 - 4;
+
+            const dot = document.createElementNS(SVG_NS, 'circle');
+            dot.setAttribute('cx', p.x - 6 + jitter); dot.setAttribute('cy', p.y + 6);
+            dot.setAttribute('r', 3);
+            dot.setAttribute('fill', socColor(ev.socPercent));
+            dot.setAttribute('class', 'ev-marker');
+            const title = document.createElementNS(SVG_NS, 'title');
+            title.textContent = `${ev.evId} — SOC ${ev.socPercent ?? '?'}%`;
+            dot.appendChild(title);
+            evLayer.appendChild(dot);
+        });
+    }
+
+    function flashAssignment(evBusId, evcsBusId, rejected) {
+        const svg = document.getElementById('networkSvg');
+        const fxLayer = svg.querySelector('#fxLayer');
+        if (!fxLayer) return;
+        const a = evBusId != null ? busPositions.get(evBusId) : null;
+        const b = evcsBusId != null ? busPositions.get(evcsBusId) : null;
+        if (!a || !b) return;
+
+        const path = document.createElementNS(SVG_NS, 'line');
+        path.setAttribute('x1', a.x); path.setAttribute('y1', a.y);
+        path.setAttribute('x2', b.x); path.setAttribute('y2', b.y);
+        path.setAttribute('class', rejected ? 'reject-flash' : 'assign-path');
+        fxLayer.appendChild(path);
+        setTimeout(() => path.classList.add('fading'), rejected ? 900 : 2200);
+        setTimeout(() => path.remove(), rejected ? 2300 : 3600);
+    }
+
+    function busIdFromNodeRef(nodeRef) {
+        return nodeRef ? parseInt(nodeRef.replace('bus_', ''), 10) : null;
+    }
+
+    // ---- side tables ----
     function renderEvRow(ev) {
         const nodeRef = ev.location ? ev.location.nodeRef : '';
-        const offset = ev.location && ev.location.offsetKm != null ? ev.location.offsetKm.toFixed(1) + ' km' : '';
-        return `<tr><td>${ev.evId}</td><td>${nodeRef} ${offset}</td><td>${ev.socPercent ?? ''}</td>` +
-               `<td>${ev.willingness ?? ''}</td><td>${fmtTime(ev.timestamp)}</td></tr>`;
+        return `<tr><td>${ev.evId}</td><td>${nodeRef}</td><td>${ev.socPercent ?? ''}</td><td>${ev.willingness ?? ''}</td></tr>`;
     }
-
     function renderEvcsRow(evcs) {
-        const connectors = (evcs.connectorTypes || []).join(', ');
-        return `<tr><td>${evcs.evcsId}</td><td>${evcs.busId ?? ''}</td><td>${connectors}</td>` +
-               `<td>${evcs.availableSlots ?? '?'} / ${evcs.queueLength ?? '?'}</td><td>${evcs.currentLoadKw ?? ''}</td></tr>`;
+        return `<tr><td>${evcs.evcsId}</td><td>${evcs.busId ?? ''}</td>` +
+               `<td>${evcs.availableSlots ?? '?'} / ${evcs.queueLength ?? '?'}</td><td>${evcs.chargeRateKw ?? ''}</td></tr>`;
     }
-
     function renderAssignmentRow(a) {
         const rejected = !a.evcsId;
-        const cls = rejected ? 'rejected' : 'ok';
         return `<tr><td>${a.evId}</td><td>${a.evcsId ?? '—'}</td>` +
                `<td>${a.distanceKm != null ? a.distanceKm.toFixed(2) : ''}</td>` +
                `<td>${a.etaMin ?? ''}</td>` +
-               `<td class="reason-code ${cls}">${a.reasonCode ?? ''}</td>` +
-               `<td>${fmtTime(a.resolvedAt)}</td></tr>`;
+               `<td class="${rejected ? 'reason-rejected' : 'reason-ok'}">${a.reasonCode ?? ''}</td></tr>`;
     }
-
-    function redrawTable(id, rowsMap, renderFn) {
-        const body = document.getElementById(id);
+    function redrawTable(bodyId, rowsMap, renderFn, countId, label) {
+        const body = document.getElementById(bodyId);
         const values = Array.from(rowsMap.values());
-        body.innerHTML = values.length
-            ? values.map(renderFn).join('')
-            : `<tr><td class="empty" colspan="6">No data yet</td></tr>`;
+        body.innerHTML = values.length ? values.map(renderFn).join('')
+            : `<tr class="empty-row"><td colspan="4">No ${label} yet</td></tr>`;
+        document.getElementById(countId).textContent = values.length ? `(${values.length})` : '';
     }
-
     function redrawAssignments() {
         const body = document.getElementById('assignmentsTableBody');
-        body.innerHTML = assignments.length
-            ? assignments.map(renderAssignmentRow).join('')
-            : `<tr><td class="empty" colspan="6">No assignments yet</td></tr>`;
+        body.innerHTML = assignments.length ? assignments.map(renderAssignmentRow).join('')
+            : `<tr class="empty-row"><td colspan="5">No assignments yet</td></tr>`;
+        document.getElementById('assignCount').textContent = assignments.length ? `(${assignments.length})` : '';
     }
 
-    fetch('/api/dashboard/snapshot')
+    fetch('/api/network/topology')
+        .then(r => r.json())
+        .then(topology => {
+            drawNetwork(topology);
+            return fetch('/api/dashboard/snapshot');
+        })
         .then(r => r.json())
         .then(snapshot => {
             (snapshot.evs || []).forEach(ev => evRows.set(ev.evId, ev));
             (snapshot.evcsStations || []).forEach(evcs => evcsRows.set(evcs.evcsId, evcs));
             (snapshot.recentAssignments || []).forEach(a => assignments.push(a));
-            redrawTable('evTableBody', evRows, renderEvRow);
-            redrawTable('evcsTableBody', evcsRows, renderEvcsRow);
+            redrawTable('evTableBody', evRows, renderEvRow, 'evCount', 'EVs');
+            redrawTable('evcsTableBody', evcsRows, renderEvcsRow, 'evcsCount', 'stations');
             redrawAssignments();
+            redrawOverlays();
         });
 
     const statusEl = document.getElementById('connectionStatus');
@@ -115,27 +400,35 @@
         reconnectDelay: 5000,
         onConnect: () => {
             statusEl.textContent = 'Connected';
-            statusEl.className = 'status connected';
+            statusEl.className = 'connected';
 
             client.subscribe('/topic/ev-status', msg => {
                 const ev = JSON.parse(msg.body);
                 evRows.set(ev.evId, ev);
-                redrawTable('evTableBody', evRows, renderEvRow);
+                redrawTable('evTableBody', evRows, renderEvRow, 'evCount', 'EVs');
+                redrawOverlays();
             });
             client.subscribe('/topic/evcs-status', msg => {
                 const evcs = JSON.parse(msg.body);
                 evcsRows.set(evcs.evcsId, evcs);
-                redrawTable('evcsTableBody', evcsRows, renderEvcsRow);
+                redrawTable('evcsTableBody', evcsRows, renderEvcsRow, 'evcsCount', 'stations');
+                redrawOverlays();
             });
             client.subscribe('/topic/assignments', msg => {
-                assignments.unshift(JSON.parse(msg.body));
+                const a = JSON.parse(msg.body);
+                assignments.unshift(a);
                 if (assignments.length > 20) assignments.pop();
                 redrawAssignments();
+
+                const ev = evRows.get(a.evId);
+                const evBusId = ev ? busIdFromNodeRef(ev.location && ev.location.nodeRef) : null;
+                const evcsBusId = a.evcsId ? evcsByBus.get(a.evcsId) : null;
+                flashAssignment(evBusId, evcsBusId, !a.evcsId);
             });
         },
         onWebSocketClose: () => {
             statusEl.textContent = 'Disconnected — retrying…';
-            statusEl.className = 'status disconnected';
+            statusEl.className = 'disconnected';
         }
     });
     client.activate();

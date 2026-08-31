@@ -415,9 +415,9 @@ docker compose up mosquitto redis postgres
 
 ### What's here
 
-A minimal WebSocket/STOMP-fed Thymeleaf view showing live EV positions,
-EVCS status, and recent assignments — the doc's own description in one
-page, no build tooling (React/webpack/etc.) added for it.
+A WebSocket/STOMP-fed Thymeleaf view showing live EV positions, EVCS
+status, and recent assignments — no build tooling (React/webpack/etc.)
+added for it.
 
 - `WebSocketConfig` — STOMP over WebSocket at `/ws` (SockJS fallback), a
   simple in-memory broker on `/topic`.
@@ -440,43 +440,68 @@ page, no build tooling (React/webpack/etc.) added for it.
 - `DashboardController` — `GET /` serves `templates/dashboard.html`;
   `GET /api/dashboard/snapshot` returns that in-memory snapshot as JSON for
   the page's initial load, before its STOMP subscriptions take over.
-- `dashboard.html` — three tables (EVs, EVCS stations, recent assignments),
-  vanilla JS (SockJS + `@stomp/stompjs` from CDN, no bundler), fetches the
-  snapshot on load then subscribes to the three topics for live updates.
 - `DashboardControllerTest` — 3 tests, run for real (not needing Docker):
   the page serves HTML, and the snapshot reflects a broadcasted EVCS status
   and a rejection. Doesn't need Docker because serving HTTP doesn't need a
   live broker/Redis/Postgres connection, only H2 for JPA.
 
-### I ran the actual golden path, not just the tests
+### Demo-quality frontend (added after a request to present this to a professor)
 
-Per the UI-testing convention, I started the real app (`docker compose up`
-+ `./gradlew bootRun`) and drove it with the Python dev-clients rather than
-just trusting the test suite:
+The plain three-table page above was functional but not something you'd
+want on a projector, so it's now a real network visualization:
 
-1. `GET /` and `GET /api/dashboard/snapshot` both responded correctly.
-2. `evcs_client.py` heartbeat → showed up in the snapshot within ~1s.
-3. `ev_client.py --send-request` → **got rejected** (`no_feasible_evcs`),
-   which surfaced a real gap: **there's still no seeding/registration path
-   for durable `Evcs`/`Ev` rows** (Phase 1 flagged this as unseeded; it
-   hadn't mattered until something actually tried to route). I manually
-   inserted an `Evcs` row via `psql` to unblock the demo — after that, the
-   same request correctly got assigned (`EVCS-DEMO`, 2.993 km, ETA 6 min),
-   and the assignment showed up in the snapshot's `recentAssignments`
-   correctly for both the rejection and the success.
-4. I could not visually confirm the rendered tables/live WebSocket updates
-   in an actual browser — no browser automation tool is available in this
-   session. I verified the JSON/HTML responses directly via `curl` instead.
-   **Please open `http://localhost:8080/` yourself** to confirm the tables
-   render and update live.
+- `NetworkTopologyController` (`com.goev.graph`) — `GET /api/network/topology`
+  exposes Table 1's buses/lines so the page draws the actual network
+  instead of duplicating that data in JavaScript.
+- `dashboard.html` now renders the 28-bus network as an SVG tree (the 27
+  lines for 28 buses mean it's exactly a spanning tree — no cycles to lay
+  out) computed client-side from the topology endpoint, with:
+  - EVCS markers on their bus, colored by live availability (green = free
+    slot, amber = queue only, gray = offline/full),
+  - EV markers on their bus, colored by SOC,
+  - an animated dashed path drawn between an EV's bus and its assigned
+    EVCS the moment `/topic/assignments` delivers a resolution (solid red
+    flash for a rejection),
+  - the three original tables kept alongside as a detail panel, plus a
+    connection-status indicator and a color legend.
+- `dev-clients/demo.py` — a scripted run for presenting: registers three
+  charging stations (two CCS, one CHAdeMO) and sends three charge requests
+  that demonstrate, in order, a normal assignment, connector-based
+  feasibility filtering in action (an EV routed past a closer but
+  incompatible station to a farther compatible one), and a rejection. **I
+  ran this against the live app and fixed a real bug in my first version**:
+  the "connector filtering" scenario silently didn't work because I'd
+  given the nearer demo station both connector types by mistake, so the
+  requesting EV was (correctly) routed there instead of skipping it — not
+  a system bug, a demo-script bug, but I verified the corrected version
+  actually produces the intended assignment before calling it done.
+- **`Evcs`/`Ev` auto-registration** (`StateService`) — the Phase 1/5 gap
+  where nothing ever created durable `Evcs`/`Ev` rows is now resolved by
+  the option flagged earlier as worth deciding: the first heartbeat from a
+  given `evcsId`, or the first charge request from a given `evId`, now
+  auto-registers a durable row with whatever fields that message carries.
+  A second heartbeat from the same station does not re-create or
+  overwrite it. This was necessary for the demo script to work without
+  manual `psql` setup, and is covered by two new
+  `StateServiceIntegrationTest` cases.
+- `NetworkTopologyControllerTest` — confirms the endpoint reflects the
+  seeded 28-bus/27-line network.
 
-### Running
+### Running the demo
 
 ```bash
-docker compose up mosquitto redis postgres   # postgres now publishes on host port 5433, not 5432 — see below
+docker compose up mosquitto redis postgres   # postgres publishes on host port 5433, not 5432 — see below
 ./gradlew bootRun
-# open http://localhost:8080/
+# open http://localhost:8080/, then in another terminal:
+python dev-clients/demo.py
 ```
+
+I ran this exact sequence against the live app (not just the test suite)
+and confirmed via the JSON APIs that all three scripted scenarios resolve
+correctly. I could not visually confirm the rendered SVG/animations in an
+actual browser — no browser automation tool is available in this session —
+so **please open the dashboard yourself** before presenting to confirm the
+network diagram, colors, and animations look right on your screen.
 
 ### What to check for Phase 6
 
@@ -488,16 +513,18 @@ docker compose up mosquitto redis postgres   # postgres now publishes on host po
    (`docker-compose.yml` and `application.yml` both updated). If your other
    machines don't have that conflict, you may prefer to move it back to
    5432 — just flagging that I changed it and why.
-2. **The `Evcs`/`Ev` registration gap (see above) is now a real blocker**,
-   not just a Phase 1 footnote — no request can ever be routed until
-   stations exist as durable rows, and nothing in the system currently
-   creates them. Worth deciding before this goes further: seed file (like
-   Table 1's), an admin API, or auto-register on first EVCS heartbeat.
-3. ~~`AssignmentNotification.etaMin` is always `null` on the dashboard~~ —
-   found while testing and fixed: `AssignmentListener.onAssignment` now
-   takes `etaMin` directly instead of only the `RoutingCandidate`, so the
-   dashboard shows the same ETA the EV actually receives over MQTT.
-4. Demo data (`EV-DEMO`, `EV-DEMO2`, `EVCS-DEMO` and their charge
-   request/assignment rows) is sitting in your local dev Postgres from this
-   verification — harmless, but `docker compose down -v && docker compose
-   up -d postgres` gives you a clean slate if you'd rather not see it.
+2. ~~The `Evcs`/`Ev` registration gap~~ — resolved via auto-registration on
+   first heartbeat/request (see above). If you'd rather have explicit
+   registration (a seed file, an admin API) instead of implicit
+   auto-registration for production, say so — this was one option among
+   several I'd flagged, picked because it unblocks the demo cleanly, not
+   because it's necessarily the right long-term answer.
+3. ~~`AssignmentNotification.etaMin` is always `null`~~ — found while
+   testing and fixed: `AssignmentListener.onAssignment` now takes `etaMin`
+   directly, so the dashboard shows the same ETA the EV receives over MQTT.
+4. The tree layout assumes the network stays a spanning tree (no added
+   loop lines). If Table 1 ever grows a line that creates a cycle, the
+   client-side layout algorithm (`layoutTree` in `dashboard.html`) will
+   need rethinking — it doesn't currently handle non-tree topologies.
+5. Local dev Postgres has been left with a clean slate (demo rows
+   truncated) for you to run the demo yourself.

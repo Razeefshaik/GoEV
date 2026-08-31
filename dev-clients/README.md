@@ -42,9 +42,32 @@ python evcs_client.py --evcs-id EVCS-07 --bus 7 --connectors ccs,chademo
 Publishes a heartbeat to `evcs/EVCS-07/status` every 5s and prints any
 reserve/release command that arrives on `evcs/EVCS-07/command`.
 
+## Run the scripted demo
+
+```bash
+docker compose up mosquitto redis postgres   # from the repo root
+./gradlew bootRun                             # from the repo root, another terminal
+python demo.py                                # from dev-clients/, another terminal
+```
+
+Registers three charging stations and sends three charge requests that
+showcase, in order: a normal greedy assignment, connector-based feasibility
+filtering (an EV routed past a closer but incompatible station to a farther
+compatible one), and a rejection (SOC/detour too tight for anything to
+qualify). Open `http://localhost:8080/` before or during the run to watch
+the network diagram update live — EV/EVCS markers appear as heartbeats
+arrive, and each assignment/rejection draws an animated path on the graph.
+Rerun anytime; each EV/EVCS id is fresh so results don't depend on prior
+runs (Postgres does keep durable rows across runs though — see the main
+README's Phase 6 notes if you want a clean slate).
+
 ## Notes
 
 - Both scripts loop forever by default; `--heartbeats N` sends N heartbeats
   then exits (handy for scripted tests). Ctrl+C stops either one cleanly.
 - Run several instances (different `--ev-id`/`--evcs-id`) in separate
   terminals to simulate a small fleet against the same broker.
+- A charge request only ever gets assigned to an EVCS that has a durable
+  `Evcs` row — the server auto-registers one the first time it hears a
+  heartbeat from a given `--evcs-id`, so just running `evcs_client.py`
+  before `ev_client.py --send-request` is enough; no manual setup needed.

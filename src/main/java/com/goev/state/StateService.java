@@ -5,6 +5,10 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import com.goev.ev.Ev;
+import com.goev.ev.EvRepository;
+import com.goev.evcs.Evcs;
+import com.goev.evcs.EvcsRepository;
 import com.goev.mqtt.ChargeRequestHandler;
 import com.goev.mqtt.ChargeRequestMessage;
 import com.goev.mqtt.EvStatusHandler;
@@ -19,6 +23,13 @@ import com.goev.mqtt.Location;
  * heartbeats, and to persist each incoming charge request durably. Deciding
  * what to do with a request (routing) is build phase 4's job, not this
  * class's — this only records state.
+ *
+ * Also auto-registers a durable {@link Evcs}/{@link Ev} row the first time
+ * a station or vehicle is ever heard from — the routing engine can only
+ * consider an EVCS/EV that has a durable row (phase 1 left this unseeded
+ * pending a decision), and "auto-register on first heartbeat" was one of
+ * the options flagged for that decision. Only fields the message actually
+ * carries are set; the rest stay null until something enriches them later.
  */
 @Service
 public class StateService implements EvStatusHandler, EvcsStatusHandler, ChargeRequestHandler {
@@ -26,15 +37,21 @@ public class StateService implements EvStatusHandler, EvcsStatusHandler, ChargeR
     private final EvLiveStateRepository evLiveStateRepository;
     private final EvcsLiveStateRepository evcsLiveStateRepository;
     private final ChargeRequestRepository chargeRequestRepository;
+    private final EvcsRepository evcsRepository;
+    private final EvRepository evRepository;
     private final StateProperties properties;
 
     public StateService(EvLiveStateRepository evLiveStateRepository,
                          EvcsLiveStateRepository evcsLiveStateRepository,
                          ChargeRequestRepository chargeRequestRepository,
+                         EvcsRepository evcsRepository,
+                         EvRepository evRepository,
                          StateProperties properties) {
         this.evLiveStateRepository = evLiveStateRepository;
         this.evcsLiveStateRepository = evcsLiveStateRepository;
         this.chargeRequestRepository = chargeRequestRepository;
+        this.evcsRepository = evcsRepository;
+        this.evRepository = evRepository;
         this.properties = properties;
     }
 
@@ -87,6 +104,23 @@ public class StateService implements EvStatusHandler, EvcsStatusHandler, ChargeR
         chargeRequestRepository.save(request);
     }
 
+    private void ensureEvcsRegistered(EvcsStatusMessage message) {
+        if (evcsRepository.existsById(message.evcsId())) {
+            return;
+        }
+        String connectorTypes = message.connectorTypes() == null ? "" : String.join(",", message.connectorTypes());
+        evcsRepository.save(new Evcs(message.evcsId(), message.busId(), message.availableSlots(),
+                message.chargeRateKw(), connectorTypes, null, message.currentLoadKw()));
+    }
+
+    private void ensureEvRegistered(ChargeRequestMessage message) {
+        if (evRepository.existsById(message.evId())) {
+            return;
+        }
+        evRepository.save(new Ev(message.evId(), message.evModel(), message.batteryCapacityKwh(),
+                null, null, null, null, null, null));
+    }
+
     @Override
     public void onEvStatus(EvStatusMessage message) {
         updateEvState(message);
@@ -95,10 +129,12 @@ public class StateService implements EvStatusHandler, EvcsStatusHandler, ChargeR
     @Override
     public void onEvcsStatus(EvcsStatusMessage message) {
         updateEvcsState(message);
+        ensureEvcsRegistered(message);
     }
 
     @Override
     public void onChargeRequest(ChargeRequestMessage message) {
         persistChargeRequest(message);
+        ensureEvRegistered(message);
     }
 }
