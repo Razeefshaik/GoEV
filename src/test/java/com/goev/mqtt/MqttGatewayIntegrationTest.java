@@ -77,12 +77,18 @@ class MqttGatewayIntegrationTest {
         device.connect();
         String json = "{\"evcsId\":\"EVCS-07\",\"busId\":7,\"connectorTypes\":[\"ccs\",\"chademo\"],"
                 + "\"availableSlots\":2,\"queueLength\":3,\"chargeRateKw\":50.0,\"currentLoadKw\":140.0}";
-        device.publish("evcs/EVCS-07/status", json.getBytes(StandardCharsets.UTF_8), 0, false);
+
+        // Retry the publish: the server's inbound adapter subscribes asynchronously after
+        // context startup, so a single QoS 0 publish can race ahead of that subscription
+        // (no retained flag, no queuing — a message published before the subscribe is simply lost).
+        Awaitility.await().atMost(Duration.ofSeconds(10)).pollInterval(Duration.ofMillis(300))
+                .untilAsserted(() -> {
+                    device.publish("evcs/EVCS-07/status", json.getBytes(StandardCharsets.UTF_8), 0, false);
+                    assertThat(capturingHandler.received()).isNotEmpty();
+                });
         device.disconnect();
         device.close();
 
-        Awaitility.await().atMost(Duration.ofSeconds(5))
-                .untilAsserted(() -> assertThat(capturingHandler.received()).hasSize(1));
         assertThat(capturingHandler.received().get(0).evcsId()).isEqualTo("EVCS-07");
     }
 

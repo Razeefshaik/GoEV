@@ -18,7 +18,7 @@ repositories {
 }
 
 ext {
-    set('testcontainersVersion', "1.20.1")
+    set('testcontainersVersion', "1.21.4")
 }
 
 dependencies {
@@ -28,6 +28,9 @@ dependencies {
     implementation 'org.springframework.integration:spring-integration-mqtt'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation 'org.jgrapht:jgrapht-core:1.5.2'
+    implementation 'ai.timefold.solver:timefold-solver-core:2.5.0'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
     runtimeOnly 'org.postgresql:postgresql'
 

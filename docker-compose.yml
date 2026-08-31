@@ -21,4 +21,6 @@ services:
       POSTGRES_USER: goev
       POSTGRES_PASSWORD: goev
     ports:
-      - "5432:5432"
+      # Published on 5433, not Postgres's usual 5432 — this machine already has a
+      # native Postgres service bound to 5432 outside this project.
+      - "5433:5432"

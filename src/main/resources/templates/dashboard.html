@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>GoEV Dashboard</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 2rem; background: #f7f7f9; color: #1a1a1a; }
+        h1 { margin-bottom: 0.25rem; }
+        .status { font-size: 0.85rem; color: #666; margin-bottom: 1.5rem; }
+        .status.connected { color: #1a7f37; }
+        .status.disconnected { color: #b91c1c; }
+        section { margin-bottom: 2rem; }
+        h2 { font-size: 1.05rem; border-bottom: 1px solid #ddd; padding-bottom: 0.4rem; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        th { background: #efefef; }
+        tr.stale { opacity: 0.45; }
+        .reason-code.ok { color: #1a7f37; }
+        .reason-code.rejected { color: #b91c1c; }
+        .empty { color: #999; font-style: italic; padding: 0.6rem; }
+    </style>
+</head>
+<body>
+<h1>GoEV Dashboard</h1>
+<div id="connectionStatus" class="status disconnected">Connecting…</div>
+
+<section>
+    <h2>EVs (live status)</h2>
+    <table>
+        <thead><tr><th>EV ID</th><th>Location</th><th>SOC %</th><th>Willingness</th><th>Last seen</th></tr></thead>
+        <tbody id="evTableBody"></tbody>
+    </table>
+</section>
+
+<section>
+    <h2>EVCS stations (live status)</h2>
+    <table>
+        <thead><tr><th>EVCS ID</th><th>Bus</th><th>Connectors</th><th>Available / Queue</th><th>Load (kW)</th></tr></thead>
+        <tbody id="evcsTableBody"></tbody>
+    </table>
+</section>
+
+<section>
+    <h2>Recent assignments</h2>
+    <table>
+        <thead><tr><th>EV</th><th>EVCS</th><th>Distance (km)</th><th>ETA (min)</th><th>Reason</th><th>Resolved at</th></tr></thead>
+        <tbody id="assignmentsTableBody"></tbody>
+    </table>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+<script th:inline="javascript">
+    const evRows = new Map();
+    const evcsRows = new Map();
+    const assignments = [];
+
+    function fmtTime(iso) {
+        if (!iso) return '';
+        return new Date(iso).toLocaleTimeString();
+    }
+
+    function renderEvRow(ev) {
+        const nodeRef = ev.location ? ev.location.nodeRef : '';
+        const offset = ev.location && ev.location.offsetKm != null ? ev.location.offsetKm.toFixed(1) + ' km' : '';
+        return `<tr><td>${ev.evId}</td><td>${nodeRef} ${offset}</td><td>${ev.socPercent ?? ''}</td>` +
+               `<td>${ev.willingness ?? ''}</td><td>${fmtTime(ev.timestamp)}</td></tr>`;
+    }
+
+    function renderEvcsRow(evcs) {
+        const connectors = (evcs.connectorTypes || []).join(', ');
+        return `<tr><td>${evcs.evcsId}</td><td>${evcs.busId ?? ''}</td><td>${connectors}</td>` +
+               `<td>${evcs.availableSlots ?? '?'} / ${evcs.queueLength ?? '?'}</td><td>${evcs.currentLoadKw ?? ''}</td></tr>`;
+    }
+
+    function renderAssignmentRow(a) {
+        const rejected = !a.evcsId;
+        const cls = rejected ? 'rejected' : 'ok';
+        return `<tr><td>${a.evId}</td><td>${a.evcsId ?? '—'}</td>` +
+               `<td>${a.distanceKm != null ? a.distanceKm.toFixed(2) : ''}</td>` +
+               `<td>${a.etaMin ?? ''}</td>` +
+               `<td class="reason-code ${cls}">${a.reasonCode ?? ''}</td>` +
+               `<td>${fmtTime(a.resolvedAt)}</td></tr>`;
+    }
+
+    function redrawTable(id, rowsMap, renderFn) {
+        const body = document.getElementById(id);
+        const values = Array.from(rowsMap.values());
+        body.innerHTML = values.length
+            ? values.map(renderFn).join('')
+            : `<tr><td class="empty" colspan="6">No data yet</td></tr>`;
+    }
+
+    function redrawAssignments() {
+        const body = document.getElementById('assignmentsTableBody');
+        body.innerHTML = assignments.length
+            ? assignments.map(renderAssignmentRow).join('')
+            : `<tr><td class="empty" colspan="6">No assignments yet</td></tr>`;
+    }
+
+    fetch('/api/dashboard/snapshot')
+        .then(r => r.json())
+        .then(snapshot => {
+            (snapshot.evs || []).forEach(ev => evRows.set(ev.evId, ev));
+            (snapshot.evcsStations || []).forEach(evcs => evcsRows.set(evcs.evcsId, evcs));
+            (snapshot.recentAssignments || []).forEach(a => assignments.push(a));
+            redrawTable('evTableBody', evRows, renderEvRow);
+            redrawTable('evcsTableBody', evcsRows, renderEvcsRow);
+            redrawAssignments();
+        });
+
+    const statusEl = document.getElementById('connectionStatus');
+    const client = new StompJs.Client({
+        webSocketFactory: () => new SockJS('/ws'),
+        reconnectDelay: 5000,
+        onConnect: () => {
+            statusEl.textContent = 'Connected';
+            statusEl.className = 'status connected';
+
+            client.subscribe('/topic/ev-status', msg => {
+                const ev = JSON.parse(msg.body);
+                evRows.set(ev.evId, ev);
+                redrawTable('evTableBody', evRows, renderEvRow);
+            });
+            client.subscribe('/topic/evcs-status', msg => {
+                const evcs = JSON.parse(msg.body);
+                evcsRows.set(evcs.evcsId, evcs);
+                redrawTable('evcsTableBody', evcsRows, renderEvcsRow);
+            });
+            client.subscribe('/topic/assignments', msg => {
+                assignments.unshift(JSON.parse(msg.body));
+                if (assignments.length > 20) assignments.pop();
+                redrawAssignments();
+            });
+        },
+        onWebSocketClose: () => {
+            statusEl.textContent = 'Disconnected — retrying…';
+            statusEl.className = 'status disconnected';
+        }
+    });
+    client.activate();
+</script>
+</body>
+</html>
