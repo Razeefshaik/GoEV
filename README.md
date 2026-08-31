@@ -528,3 +528,53 @@ network diagram, colors, and animations look right on your screen.
    need rethinking — it doesn't currently handle non-tree topologies.
 5. Local dev Postgres has been left with a clean slate (demo rows
    truncated) for you to run the demo yourself.
+
+## Manual dashboard controls (added on request, for interactive demos)
+
+Two forms on the dashboard let you drive the system by hand instead of only
+via `dev-clients/`:
+
+- **Place EVCS** — click a bus (or a line, which picks its near end) or
+  type a bus number, fill in the station's id/connectors/slots/rate,
+  submit. Publishes the same `EvcsStatusMessage` a real device's heartbeat
+  would, through `MqttInboundRouter`'s dispatch (now public/reusable for
+  exactly this) — same auto-registration and live-state treatment as MQTT.
+- **Send charge request** — a structured form (EV id, bus, SOC%, battery
+  kWh, connector, willingness, max detour). Publishes a synthetic heartbeat
+  + request the same way, so the result shows up on the network diagram
+  and tables exactly like a real device's request would.
+- `POST /api/demo/evcs` and `POST /api/demo/request` (`DemoController`)
+  back both forms; `DemoControllerTest` (2 tests, real Redis+Mosquitto via
+  Testcontainers) confirms both actually flow through real routing, not
+  just get accepted.
+
+### A real bug found and fixed while testing this live
+
+Placed two EVCS via the form, then got repeated `no_feasible_evcs`
+rejections for a request that should obviously have worked (a station one
+hop away, matching connector, plenty of SOC). Traced it to Redis directly
+rather than guessing:
+
+```bash
+docker exec goev-redis redis-cli EXISTS "evcs_live_state:EVCS-1"   # -> 0, i.e. gone
+```
+
+**Root cause**: the "Place EVCS" button only ever sent *one* heartbeat,
+unlike a real device (or `dev-clients/evcs_client.py`) which heartbeats
+continuously. That single heartbeat's live state — the thing
+`RoutingPolicyEngine` actually reads to decide feasibility — expires after
+`goev.state.evcs-ttl-seconds` (90s default), same as it would for a real
+device that went offline. But `DashboardBroadcaster`'s in-memory snapshot
+cache (what the dashboard UI displays) never expires entries, so a
+manually-placed station kept *looking* present on-screen for the rest of
+the session while actually being invisible to routing. Any interactive
+demo session running longer than 90 seconds would silently hit this.
+
+**Fix**: the "Place EVCS" form now keeps re-sending that station's
+heartbeat every 30 seconds for as long as the dashboard tab stays open
+(`dashboard.html`), the same way a real device's continuous heartbeat
+loop would. This only covers stations placed through the form in the
+current tab — one placed, then the page reloaded, needs re-placing (its
+JS-side refresh timer doesn't survive a reload). Restart the app to pick
+up this fix; it's a template change, and Thymeleaf caching means a running
+server won't see it until restarted.

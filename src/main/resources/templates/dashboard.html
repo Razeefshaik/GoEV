@@ -66,6 +66,14 @@
 
         #networkCard { position: relative; }
         #networkSvg { width: 100%; height: auto; display: block; }
+        #pickHint {
+            display: none;
+            margin-top: 0.5rem;
+            font-size: 0.78rem;
+            color: var(--accent);
+            font-weight: 600;
+        }
+        #pickHint.active { display: block; }
         .legend {
             display: flex;
             flex-wrap: wrap;
@@ -87,9 +95,76 @@
         .reason-rejected { color: var(--red); font-weight: 600; }
         .scroll-body { max-height: 220px; overflow-y: auto; }
 
-        .bus-dot { fill: #ffffff; stroke: var(--line); stroke-width: 1.5; }
-        .bus-label { font-size: 9px; fill: var(--muted); text-anchor: middle; }
-        .grid-line { stroke: var(--line); stroke-width: 1.4; }
+        .control-form { display: flex; flex-direction: column; gap: 0.55rem; }
+        .control-form label {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+        .control-form input, .control-form select {
+            font-size: 0.85rem;
+            padding: 0.4rem 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: inherit;
+        }
+        .bus-pick-row { display: flex; gap: 0.4rem; }
+        .bus-pick-row input { flex: 1; min-width: 0; }
+        .pick-btn {
+            font-size: 0.72rem;
+            padding: 0.4rem 0.55rem;
+            border: 1px solid var(--accent);
+            background: white;
+            color: var(--accent);
+            border-radius: 6px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .pick-btn.armed { background: var(--accent); color: white; }
+        .control-form button[type="submit"] {
+            margin-top: 0.3rem;
+            padding: 0.5rem;
+            border: none;
+            border-radius: 6px;
+            background: var(--text);
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .control-form button[type="submit"]:hover { opacity: 0.9; }
+
+        #toastStack {
+            position: fixed;
+            bottom: 1.25rem;
+            right: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            z-index: 100;
+        }
+        .toast {
+            padding: 0.6rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            color: white;
+            background: var(--green);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            animation: fadeOut 3.2s ease forwards;
+        }
+        .toast.error { background: var(--red); }
+
+        .bus-dot { fill: #ffffff; stroke: var(--line); stroke-width: 1.5; cursor: pointer; }
+        .bus-dot:hover { stroke: var(--accent); stroke-width: 2.4; }
+        .bus-label { font-size: 9px; fill: var(--muted); text-anchor: middle; pointer-events: none; }
+        .grid-line { stroke: var(--line); stroke-width: 1.4; cursor: pointer; }
+        .grid-line:hover { stroke: var(--accent); stroke-width: 2.4; }
+        .grid-line-hit { stroke: transparent; stroke-width: 10; cursor: pointer; }
+        .picked-ring { fill: none; stroke: var(--accent); stroke-width: 1.6; opacity: 0.9; }
         .evcs-marker { stroke: white; stroke-width: 1.2; cursor: default; }
         .ev-marker { stroke: white; stroke-width: 1; cursor: default; }
         .assign-path {
@@ -107,7 +182,7 @@
             opacity: 0.85;
         }
         @keyframes dash { to { stroke-dashoffset: -20; } }
-        @keyframes fadeOut { from { opacity: 0.9; } to { opacity: 0; } }
+        @keyframes fadeOut { 0% { opacity: 0.95; } 80% { opacity: 0.95; } 100% { opacity: 0; } }
         .fading { animation: fadeOut 1.4s ease-out forwards; }
     </style>
 </head>
@@ -124,6 +199,7 @@
     <div class="card" id="networkCard">
         <h2>Distribution network</h2>
         <svg id="networkSvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg>
+        <div id="pickHint">Click a bus (or a line — picks its near end) to fill in the bus field…</div>
         <div class="legend">
             <span><span class="swatch" style="background:#16a34a"></span>EVCS — slot free</span>
             <span><span class="swatch" style="background:#d97706"></span>EVCS — queued only</span>
@@ -135,6 +211,68 @@
     </div>
 
     <div class="side-stack">
+        <div class="card">
+            <h2>Place EVCS</h2>
+            <form id="placeEvcsForm" class="control-form">
+                <label>EVCS ID
+                    <input type="text" id="evcsIdInput" required placeholder="EVCS-01">
+                </label>
+                <label>Bus
+                    <span class="bus-pick-row">
+                        <input type="number" id="evcsBusInput" min="1" max="28" required placeholder="e.g. 6">
+                        <button type="button" class="pick-btn" data-target="evcs">Pick on map</button>
+                    </span>
+                </label>
+                <label>Connectors (comma-separated)
+                    <input type="text" id="evcsConnectorsInput" value="ccs,chademo">
+                </label>
+                <label>Available slots
+                    <input type="number" id="evcsSlotsInput" value="2" min="0">
+                </label>
+                <label>Charge rate (kW)
+                    <input type="number" id="evcsRateInput" value="50">
+                </label>
+                <button type="submit">Place EVCS</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Send charge request</h2>
+            <form id="sendRequestForm" class="control-form">
+                <label>EV ID
+                    <input type="text" id="reqEvIdInput" required placeholder="EV-01">
+                </label>
+                <label>Bus
+                    <span class="bus-pick-row">
+                        <input type="number" id="reqBusInput" min="1" max="28" required placeholder="e.g. 10">
+                        <button type="button" class="pick-btn" data-target="request">Pick on map</button>
+                    </span>
+                </label>
+                <label>SOC %
+                    <input type="number" id="reqSocInput" value="50" min="0" max="100">
+                </label>
+                <label>Battery capacity (kWh)
+                    <input type="number" id="reqBatteryInput" value="62">
+                </label>
+                <label>Connector
+                    <select id="reqConnectorInput">
+                        <option value="ccs">CCS</option>
+                        <option value="chademo">CHAdeMO</option>
+                    </select>
+                </label>
+                <label>Willingness
+                    <select id="reqWillingnessInput">
+                        <option value="no_passenger">No passenger (flexible)</option>
+                        <option value="has_passenger">Has passenger (minimize detour)</option>
+                    </select>
+                </label>
+                <label>Max detour (km)
+                    <input type="number" id="reqDetourInput" value="10">
+                </label>
+                <button type="submit">Send request</button>
+            </form>
+        </div>
+
         <div class="card">
             <h2>EVs <span class="count" id="evCount"></span></h2>
             <div class="scroll-body">
@@ -167,6 +305,8 @@
     </div>
 </main>
 
+<div id="toastStack"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
 <script>
@@ -180,11 +320,68 @@
     const assignments = [];
     let busPositions = new Map();
     let evcsByBus = new Map();
+    let pendingPickTarget = null;
 
     function fmtTime(iso) {
         if (!iso) return '';
         return new Date(iso).toLocaleTimeString();
     }
+
+    function toast(message, isError) {
+        const stack = document.getElementById('toastStack');
+        const el = document.createElement('div');
+        el.className = 'toast' + (isError ? ' error' : '');
+        el.textContent = message;
+        stack.appendChild(el);
+        setTimeout(() => el.remove(), 3300);
+    }
+
+    // ---- manual "pick a bus from the map" mode, shared by both control forms ----
+    function armPick(target) {
+        pendingPickTarget = target;
+        document.querySelectorAll('.pick-btn').forEach(btn => btn.classList.toggle('armed', btn.dataset.target === target));
+        document.getElementById('pickHint').classList.add('active');
+    }
+    function disarmPick() {
+        pendingPickTarget = null;
+        document.querySelectorAll('.pick-btn').forEach(btn => btn.classList.remove('armed'));
+        document.getElementById('pickHint').classList.remove('active');
+    }
+    function applyPickedBus(busId) {
+        if (!pendingPickTarget) return;
+        const inputId = pendingPickTarget === 'evcs' ? 'evcsBusInput' : 'reqBusInput';
+        document.getElementById(inputId).value = busId;
+        flashPickedBus(busId);
+        disarmPick();
+    }
+    function flashPickedBus(busId) {
+        const p = busPositions.get(busId);
+        const svg = document.getElementById('networkSvg');
+        const fxLayer = svg.querySelector('#fxLayer');
+        if (!p || !fxLayer) return;
+        const ring = document.createElementNS(SVG_NS, 'circle');
+        ring.setAttribute('cx', p.x); ring.setAttribute('cy', p.y);
+        ring.setAttribute('r', 3.2);
+        ring.setAttribute('class', 'picked-ring');
+        fxLayer.appendChild(ring);
+        let r = 3.2;
+        const grow = setInterval(() => {
+            r += 1.2;
+            ring.setAttribute('r', r);
+            ring.style.opacity = Math.max(0, 1 - (r - 3.2) / 10);
+            if (r > 13) { clearInterval(grow); ring.remove(); }
+        }, 40);
+    }
+
+    document.querySelectorAll('.pick-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (pendingPickTarget === btn.dataset.target) {
+                disarmPick();
+            } else {
+                armPick(btn.dataset.target);
+            }
+        });
+    });
 
     // ---- tree layout of the radial network (27 lines / 28 buses = a spanning tree) ----
     function layoutTree(topology) {
@@ -240,7 +437,16 @@
             line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
             line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
             line.setAttribute('class', 'grid-line');
+            const hit = document.createElementNS(SVG_NS, 'line');
+            hit.setAttribute('x1', a.x); hit.setAttribute('y1', a.y);
+            hit.setAttribute('x2', b.x); hit.setAttribute('y2', b.y);
+            hit.setAttribute('class', 'grid-line-hit');
+            hit.addEventListener('click', () => applyPickedBus(l.seBus));
+            const title = document.createElementNS(SVG_NS, 'title');
+            title.textContent = `Line ${l.lineId}: bus ${l.seBus} -> bus ${l.reBus} (${l.estLengthKm} km) — click picks bus ${l.seBus}`;
+            hit.appendChild(title);
             linesGroup.appendChild(line);
+            linesGroup.appendChild(hit);
         });
         svg.appendChild(linesGroup);
 
@@ -252,6 +458,10 @@
             dot.setAttribute('cx', p.x); dot.setAttribute('cy', p.y);
             dot.setAttribute('r', 3.2);
             dot.setAttribute('class', 'bus-dot');
+            dot.addEventListener('click', () => applyPickedBus(bus.busId));
+            const title = document.createElementNS(SVG_NS, 'title');
+            title.textContent = `Bus ${bus.busId} — click to pick`;
+            dot.appendChild(title);
             busGroup.appendChild(dot);
 
             const label = document.createElementNS(SVG_NS, 'text');
@@ -376,6 +586,72 @@
             : `<tr class="empty-row"><td colspan="5">No assignments yet</td></tr>`;
         document.getElementById('assignCount').textContent = assignments.length ? `(${assignments.length})` : '';
     }
+
+    // ---- manual control forms ----
+
+    // A manually-placed EVCS only ever gets one heartbeat from this form, unlike a
+    // real device that heartbeats continuously — its live state (routing reads this,
+    // not the dashboard's own cache) otherwise silently expires after
+    // goev.state.evcs-ttl-seconds (90s default) while still *looking* present here.
+    // Keep re-sending the same heartbeat periodically for as long as this page is
+    // open so anything placed through the UI stays routable.
+    const EVCS_REHEARTBEAT_MS = 30000;
+    const activeEvcsHeartbeats = new Map();
+
+    function placeEvcs(body) {
+        return fetch('/api/demo/evcs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+            .then(r => { if (!r.ok) throw new Error('server rejected the request'); });
+    }
+
+    function startAutoReheartbeat(evcsId, body) {
+        const existing = activeEvcsHeartbeats.get(evcsId);
+        if (existing) clearInterval(existing);
+        const intervalId = setInterval(() => placeEvcs(body).catch(() => {}), EVCS_REHEARTBEAT_MS);
+        activeEvcsHeartbeats.set(evcsId, intervalId);
+    }
+
+    document.getElementById('placeEvcsForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const evcsId = document.getElementById('evcsIdInput').value.trim();
+        const busId = parseInt(document.getElementById('evcsBusInput').value, 10);
+        if (!evcsId || !Number.isInteger(busId)) { toast('EVCS id and a valid bus are required', true); return; }
+
+        const body = {
+            evcsId,
+            busId,
+            connectorTypes: document.getElementById('evcsConnectorsInput').value.trim(),
+            availableSlots: parseInt(document.getElementById('evcsSlotsInput').value, 10),
+            chargeRateKw: parseFloat(document.getElementById('evcsRateInput').value)
+        };
+        placeEvcs(body)
+            .then(() => {
+                startAutoReheartbeat(evcsId, body);
+                toast(`${evcsId} placed at bus ${busId} — staying live while this page is open`);
+            })
+            .catch(err => toast('Failed to place EVCS: ' + err.message, true));
+    });
+
+    document.getElementById('sendRequestForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const evId = document.getElementById('reqEvIdInput').value.trim();
+        const busId = parseInt(document.getElementById('reqBusInput').value, 10);
+        if (!evId || !Number.isInteger(busId)) { toast('EV id and a valid bus are required', true); return; }
+
+        const connector = document.getElementById('reqConnectorInput').value;
+        const body = {
+            evId,
+            busId,
+            offsetKm: 0,
+            socPercent: parseFloat(document.getElementById('reqSocInput').value),
+            batteryCapacityKwh: parseFloat(document.getElementById('reqBatteryInput').value),
+            evModel: `custom_${connector}`,
+            willingness: document.getElementById('reqWillingnessInput').value,
+            maxDetourKm: parseFloat(document.getElementById('reqDetourInput').value)
+        };
+        fetch('/api/demo/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+            .then(r => { if (!r.ok) throw new Error('server rejected the request'); toast(`Request sent for ${evId} — watch the network diagram`); })
+            .catch(err => toast('Failed to send request: ' + err.message, true));
+    });
 
     fetch('/api/network/topology')
         .then(r => r.json())

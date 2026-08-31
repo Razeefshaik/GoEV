@@ -19,6 +19,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * Each handler is isolated: one throwing (e.g. a downstream store being
  * unreachable) is logged and doesn't stop the others in the list from
  * running.
+ *
+ * The three {@code dispatchXxx} methods are public so a message that didn't
+ * arrive over MQTT — e.g. the dashboard's manual EVCS-placement/charge-request
+ * controls — can still go through the exact same handler fan-out (same
+ * auto-registration, live state, and routing side effects a real device's
+ * message would trigger) without a browser needing to speak MQTT itself.
  */
 @Component
 public class MqttInboundRouter {
@@ -52,17 +58,26 @@ public class MqttInboundRouter {
         String payload = message.getPayload();
 
         if ("ev".equals(category) && "status".equals(suffix)) {
-            EvStatusMessage parsed = objectMapper.readValue(payload, EvStatusMessage.class);
-            dispatch(evStatusHandlers, h -> h.onEvStatus(parsed));
+            dispatchEvStatus(objectMapper.readValue(payload, EvStatusMessage.class));
         } else if ("ev".equals(category) && "request".equals(suffix)) {
-            ChargeRequestMessage parsed = objectMapper.readValue(payload, ChargeRequestMessage.class);
-            dispatch(chargeRequestHandlers, h -> h.onChargeRequest(parsed));
+            dispatchChargeRequest(objectMapper.readValue(payload, ChargeRequestMessage.class));
         } else if ("evcs".equals(category) && "status".equals(suffix)) {
-            EvcsStatusMessage parsed = objectMapper.readValue(payload, EvcsStatusMessage.class);
-            dispatch(evcsStatusHandlers, h -> h.onEvcsStatus(parsed));
+            dispatchEvcsStatus(objectMapper.readValue(payload, EvcsStatusMessage.class));
         } else {
             throw new IllegalArgumentException("Unrecognized MQTT topic: " + topic);
         }
+    }
+
+    public void dispatchEvStatus(EvStatusMessage message) {
+        dispatch(evStatusHandlers, h -> h.onEvStatus(message));
+    }
+
+    public void dispatchChargeRequest(ChargeRequestMessage message) {
+        dispatch(chargeRequestHandlers, h -> h.onChargeRequest(message));
+    }
+
+    public void dispatchEvcsStatus(EvcsStatusMessage message) {
+        dispatch(evcsStatusHandlers, h -> h.onEvcsStatus(message));
     }
 
     private <T> void dispatch(List<T> handlers, java.util.function.Consumer<T> invocation) {
