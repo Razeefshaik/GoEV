@@ -1,0 +1,17 @@
+[Unit]
+Description=GoEV simulated EV client
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/goev/dev-clients
+# Edit --broker to your PC's LAN IP, and --ev-id/--bus/--soc as needed.
+# --heartbeats 0 (the default) means "loop forever", matching a real device.
+ExecStart=/home/pi/goev-venv/bin/python ev_client.py --ev-id EV-PI --broker 192.168.1.100 --bus 6 --soc 60 --interval 5
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

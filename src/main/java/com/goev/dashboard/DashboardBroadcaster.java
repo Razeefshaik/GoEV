@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +19,7 @@ import com.goev.mqtt.EvcsStatusHandler;
 import com.goev.mqtt.EvcsStatusMessage;
 import com.goev.routing.AssignmentListener;
 import com.goev.routing.RoutingCandidate;
+import com.goev.state.EvcsLiveStateChangedEvent;
 
 /**
  * Bridges the existing handler-list seams (EV/EVCS heartbeats from
@@ -51,6 +53,19 @@ public class DashboardBroadcaster implements EvStatusHandler, EvcsStatusHandler,
     public void onEvcsStatus(EvcsStatusMessage message) {
         latestEvcsStatus.put(message.evcsId(), message);
         messagingTemplate.convertAndSend("/topic/evcs-status", message);
+    }
+
+    /**
+     * Slot occupation/release ({@link com.goev.state.StateService#occupySlot})
+     * isn't a heartbeat, so it can't reach this class via the
+     * {@link EvcsStatusHandler} list {@code MqttInboundRouter} dispatches to
+     * (that would need {@code StateService} to depend on
+     * {@code MqttInboundRouter}, which already depends on {@code StateService}
+     * being in that list — a cycle). A plain Spring event sidesteps it.
+     */
+    @EventListener
+    public void onEvcsLiveStateChanged(EvcsLiveStateChangedEvent event) {
+        onEvcsStatus(event.message());
     }
 
     @Override

@@ -149,4 +149,41 @@ class StateServiceIntegrationTest {
             assertThat(ev.getBatteryCapacityKwh()).isEqualTo(45.0);
         });
     }
+
+    @Test
+    void occupySlotDecrementsThenReleaseRestoresAvailableSlots() {
+        stateService.onEvcsStatus(new EvcsStatusMessage(
+                "EVCS-OCCUPY", 8, List.of("ccs"), 2, 0, 50.0, 0.0));
+
+        stateService.occupySlot("EVCS-OCCUPY", 1);
+
+        assertThat(stateService.getEvcsState("EVCS-OCCUPY"))
+                .hasValueSatisfying(state -> assertThat(state.getAvailableSlots()).isEqualTo(1));
+
+        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
+                assertThat(stateService.getEvcsState("EVCS-OCCUPY"))
+                        .hasValueSatisfying(state -> assertThat(state.getAvailableSlots()).isEqualTo(2)));
+    }
+
+    @Test
+    void occupySlotNeverDropsBelowZeroEvenWithMoreOccupationsThanSlots() {
+        stateService.onEvcsStatus(new EvcsStatusMessage(
+                "EVCS-OVERBOOK", 8, List.of("ccs"), 1, 0, 50.0, 0.0));
+
+        stateService.occupySlot("EVCS-OVERBOOK", 2);
+        stateService.occupySlot("EVCS-OVERBOOK", 2);
+
+        assertThat(stateService.getEvcsState("EVCS-OVERBOOK"))
+                .hasValueSatisfying(state -> assertThat(state.getAvailableSlots()).isEqualTo(0));
+
+        // Wait out both scheduled releases before the test method returns. Otherwise
+        // JUnit's @AfterAll tears down this class's Redis container while they're
+        // still pending; when they eventually fire against a now-dead connection,
+        // each burns a full minute on a Lettuce command timeout — a shorter delay
+        // above doesn't fix that, since the delay only controls *when* the task
+        // fires, not how long a doomed command takes to time out once it does.
+        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
+                assertThat(stateService.getEvcsState("EVCS-OVERBOOK"))
+                        .hasValueSatisfying(state -> assertThat(state.getAvailableSlots()).isEqualTo(1)));
+    }
 }

@@ -10,11 +10,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+
+import com.goev.state.EvcsLiveStateRepository;
 
 /**
  * Exercises NetworkGraphService against the real Table 1 seed data (28 buses,
- * 27 lines) loaded straight from the CSV, not a synthetic fixture.
+ * 27 lines) loaded straight from the CSV, not a synthetic fixture. No EVCS
+ * rows are ever seeded here, so the live-load-coupling term in headroomMva
+ * is always zero regardless of the mocked EvcsLiveStateRepository's
+ * behavior — see NetworkGraphLoadCouplingTest for that behavior itself.
  */
 @DataJpaTest
 @Import({NetworkGraphService.class, NetworkSeedLoader.class})
@@ -25,6 +31,9 @@ class NetworkGraphServiceTest {
 
     @Autowired
     private NetworkSeedLoader seedLoader;
+
+    @MockBean
+    private EvcsLiveStateRepository evcsLiveStateRepository;
 
     @BeforeEach
     void seedNetwork() throws IOException {

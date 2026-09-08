@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: goev-server
+  datasource:
+    url: jdbc:postgresql://localhost:5433/goev
+    username: goev
+    password: goev
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+goev:
+  mqtt:
+    broker-url: tcp://localhost:1883
+    client-id: goev-server
+    ev-status-topic: ev/+/status
+    ev-request-topic: ev/+/request
+    evcs-status-topic: evcs/+/status
+    qos-heartbeat: 0
+    qos-state-change: 1
+  state:
+    ev-ttl-seconds: 90
+    evcs-ttl-seconds: 90
+  routing:
+    weight-distance: 0.35
+    weight-soc-urgency: 0.15
+    weight-queue: 0.2
+    weight-headroom: 0.2
+    weight-willingness: 0.1
+    headroom-normalization-mva: 1.0
+    max-acceptable-queue-length: 3
+    default-min-soc-threshold-percent: 10.0
+    default-energy-consumption-kwh-per-km: 0.2
+    assumed-avg-speed-kmh: 30.0
+    reservation-ttl-seconds: 300
+    mode: greedy
+    batch-window-ms: 10000
+    batch-solver-time-limit-ms: 3000

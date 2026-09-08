@@ -71,3 +71,10 @@ README's Phase 6 notes if you want a clean slate).
   `Evcs` row — the server auto-registers one the first time it hears a
   heartbeat from a given `--evcs-id`, so just running `evcs_client.py`
   before `ev_client.py --send-request` is enough; no manual setup needed.
+
+## Running on a real Raspberry Pi
+
+See [raspberry-pi/README.md](raspberry-pi/README.md) — flashing the SD
+card, headless setup, and deploying `ev_client.py` (unmodified) so a real
+Pi Zero 2 W acts as an actual EV on the network instead of a PC-run
+simulator.

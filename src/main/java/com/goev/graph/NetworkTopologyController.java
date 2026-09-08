@@ -17,7 +17,7 @@ public class NetworkTopologyController {
         this.lineRepository = lineRepository;
     }
 
-    public record BusView(int busId) {
+    public record BusView(int busId, Double latitude, Double longitude) {
     }
 
     public record LineView(int lineId, int seBus, int reBus, double estLengthKm, double maxLoadingMva) {
@@ -29,7 +29,7 @@ public class NetworkTopologyController {
     @GetMapping("/api/network/topology")
     public Topology topology() {
         List<BusView> buses = busRepository.findAll().stream()
-                .map(b -> new BusView(b.getBusId()))
+                .map(b -> new BusView(b.getBusId(), b.getLatitude(), b.getLongitude()))
                 .toList();
         List<LineView> lines = lineRepository.findAll().stream()
                 .map(l -> new LineView(l.getLineId(), l.getSeBus(), l.getReBus(), l.getEstLengthKm(), l.getMaxLoadingMva()))

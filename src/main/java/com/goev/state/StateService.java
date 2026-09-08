@@ -3,6 +3,8 @@ package com.goev.state;
 import java.time.Instant;
 import java.util.Optional;
 
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 
 import com.goev.ev.Ev;
@@ -40,19 +42,25 @@ public class StateService implements EvStatusHandler, EvcsStatusHandler, ChargeR
     private final EvcsRepository evcsRepository;
     private final EvRepository evRepository;
     private final StateProperties properties;
+    private final TaskScheduler taskScheduler;
+    private final ApplicationEventPublisher eventPublisher;
 
     public StateService(EvLiveStateRepository evLiveStateRepository,
                          EvcsLiveStateRepository evcsLiveStateRepository,
                          ChargeRequestRepository chargeRequestRepository,
                          EvcsRepository evcsRepository,
                          EvRepository evRepository,
-                         StateProperties properties) {
+                         StateProperties properties,
+                         TaskScheduler taskScheduler,
+                         ApplicationEventPublisher eventPublisher) {
         this.evLiveStateRepository = evLiveStateRepository;
         this.evcsLiveStateRepository = evcsLiveStateRepository;
         this.chargeRequestRepository = chargeRequestRepository;
         this.evcsRepository = evcsRepository;
         this.evRepository = evRepository;
         this.properties = properties;
+        this.taskScheduler = taskScheduler;
+        this.eventPublisher = eventPublisher;
     }
 
     public void updateEvState(EvStatusMessage message) {
@@ -88,6 +96,43 @@ public class StateService implements EvStatusHandler, EvcsStatusHandler, ChargeR
 
     public Optional<EvcsLiveState> getEvcsState(String evcsId) {
         return evcsLiveStateRepository.findById(evcsId);
+    }
+
+    /**
+     * Marks one slot at this EVCS occupied right away (so a second request in the
+     * same instant can't also be routed there — greedy assigns one request at a
+     * time and only sees "current" live state, so without this an EVCS's reported
+     * capacity never actually reflected who'd already been sent there), then
+     * schedules the slot to free up again after {@code durationSeconds} — standing
+     * in for "the EV finished charging and left" until a real device reports its
+     * own departure. The duration is the caller's call (routing owns
+     * {@code reservationTtlSeconds}, not this package), not a real
+     * energy-needed/charge-rate estimate — a documented simplification.
+     */
+    public void occupySlot(String evcsId, long durationSeconds) {
+        adjustSlots(evcsId, -1);
+        taskScheduler.schedule(() -> adjustSlots(evcsId, 1), Instant.now().plusSeconds(durationSeconds));
+    }
+
+    private void adjustSlots(String evcsId, int delta) {
+        evcsLiveStateRepository.findById(evcsId).ifPresent(state -> {
+            int ceiling = evcsRepository.findById(evcsId)
+                    .map(Evcs::getTotalSlots)
+                    .filter(total -> total != null)
+                    .orElse(Integer.MAX_VALUE);
+            int current = state.getAvailableSlots() == null ? 0 : state.getAvailableSlots();
+            int updatedSlots = Math.max(0, Math.min(current + delta, ceiling));
+
+            EvcsLiveState updated = new EvcsLiveState(
+                    evcsId, state.getBusId(), state.getConnectorTypes(), updatedSlots,
+                    state.getQueueLength(), state.getChargeRateKw(), state.getCurrentLoadKw(),
+                    Instant.now(), state.getTtlSeconds());
+            evcsLiveStateRepository.save(updated);
+
+            eventPublisher.publishEvent(new EvcsLiveStateChangedEvent(new EvcsStatusMessage(
+                    evcsId, updated.getBusId(), updated.getConnectorTypes(), updated.getAvailableSlots(),
+                    updated.getQueueLength(), updated.getChargeRateKw(), updated.getCurrentLoadKw())));
+        });
     }
 
     private void persistChargeRequest(ChargeRequestMessage message) {

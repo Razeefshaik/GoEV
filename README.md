@@ -578,3 +578,224 @@ current tab — one placed, then the page reloaded, needs re-placing (its
 JS-side refresh timer doesn't survive a reload). Restart the app to pick
 up this fix; it's a template change, and Thymeleaf caching means a running
 server won't see it until restarted.
+
+## Further live-demo refinements (found/requested while presenting)
+
+### 1. Rejections were invisible on the network diagram — real bug, fixed
+
+Reported as "an EV that can't be paired still just shows blue." Traced to
+`flashAssignment` in `dashboard.html`: it drew a line from the EV's bus to
+the assigned EVCS's bus, but a rejection has no assigned EVCS, so
+`evcsBusId` was `null` — the function's own `if (!a || !b) return;` guard
+silently did nothing for every rejection. There was never any visual
+feedback for a rejection at all, which is why the EV just looked normal
+(its color is SOC-based, not outcome-based).
+
+**Fixed**: a rejection now draws a red pulsing ring at the EV's own bus
+instead of a line to nowhere. The EV's marker also now gets a persistent
+red outline (`.ev-marker.rejected`) after its most recent request was
+rejected, until its next request succeeds — so you don't have to catch the
+~2s flash to know something failed; it stays visible until resolved.
+
+### 2. Assignment animation cut straight across the diagram instead of following the actual route
+
+Correct instinct on your part — the lines in the diagram are Table 1's
+electrical distribution lines (the only "roads" this system's routing
+distance is computed over; there's no separate road-network model), and
+the animation should follow them, not cut a straight diagonal across
+unrelated buses. It was drawing a raw point-to-point SVG `<line>` instead
+of tracing the path.
+
+**Fixed**: since the network is a spanning tree (27 lines / 28 buses, no
+cycles), the path between any two buses is unique and easy to compute —
+walk both up to their lowest common ancestor (`pathBetween` in
+`dashboard.html`). The animation is now a `<polyline>` through every bus
+on that actual path, matching the distance `NetworkGraphService` computed
+for the assignment.
+
+### 3. EVCS occupancy now has a time factor
+
+Previously, reserving a slot never actually reduced what the EVCS reported
+as available — `availableSlots` only ever changed when the station's own
+heartbeat said so, which nothing did automatically. In principle two
+different EVs could get "assigned" to the same single-slot station back to
+back, since the live state the router reads never reflected the first
+reservation.
+
+**Fixed**: `StateService.occupySlot(evcsId, durationSeconds)` — called by
+`ReservationService.reserve()` right after a successful assignment —
+decrements the EVCS's live `availableSlots` immediately (clamped to the
+station's durable `totalSlots`) and schedules an automatic release after
+`durationSeconds` via a new `TaskScheduler` bean (`SchedulingConfig`). The
+dashboard reflects both the drop and the later recovery automatically,
+since occupancy changes broadcast through the same `/topic/evcs-status`
+channel real heartbeats use — via a new `EvcsLiveStateChangedEvent`
+(plain Spring event, not the `MqttInboundRouter` handler-list path, which
+would have made `StateService` and `MqttInboundRouter` depend on each
+other circularly).
+
+**What to check**: the occupation duration reused is
+`goev.routing.reservation-ttl-seconds` (default 300s) — i.e. "how long we
+hold a reservation," not a real charging-time estimate (which would depend
+on energy needed and the station's charge rate). Treat this as a
+placeholder for a real per-session charging-duration model later, not the
+final answer. Covered by two new `StateServiceIntegrationTest` cases
+(decrement-then-restore, and never dropping below zero when over-occupied)
+— **not yet re-verified with Docker actually up**, since it was down when
+I ran the suite this time; everything else passed (26 of 37 tests ran for
+real, the other 11 skipped cleanly).
+
+### 4. Raspberry Pi Zero 2 W deployment — prepared, not yet tested (no SD card yet)
+
+See [dev-clients/raspberry-pi/](dev-clients/raspberry-pi/README.md):
+SD-card flashing steps (64-bit Raspberry Pi OS Lite — the Zero 2 W's
+quad-core Cortex-A53 supports it, unlike the original single-core Zero),
+headless SSH setup, a `setup.sh` provisioning script, and an optional
+systemd service (`goev-ev-client.service`) to run `ev_client.py`
+continuously on boot. No code changes needed on the Pi side beyond editing
+`--broker` to your PC's LAN IP — `ev_client.py` already runs as plain
+Python 3 + `paho-mqtt`. Untested against real hardware, since the SD card
+isn't available yet; please try the steps once it arrives and let me know
+if anything doesn't match reality.
+
+## A real bug found and fixed while verifying the above
+
+`occupySlotNeverDropsBelowZeroEvenWithMoreOccupationsThanSlots` originally
+scheduled its releases 60 seconds out. That test's assertions run and pass
+almost immediately, so its `@AfterAll` tore down that class's Testcontainers
+Redis while both releases were still pending; ~60s later each one fired
+against a now-dead connection and burned a full minute on a Lettuce command
+timeout — logged as a scary `RedisCommandTimeoutException` well after the
+test had already passed, and the reason the suite intermittently looked
+"stuck" (once literally past the point where interrupting and restarting
+the run was the only way to tell). **Fixed**: the test now awaits both
+releases actually completing before returning, so nothing is left pending
+when the container goes away. Not a production bug — Redis doesn't get torn
+down mid-flight outside of tests — but a real one nonetheless, and now
+covered correctly rather than papered over with a shorter number.
+
+## Phase 7 — Load/capacity coupling
+
+The last item from the original build plan: EVCS charging load now feeds
+back into per-line MVA headroom, so routing actually weighs Table 1's
+electrical capacity, not just distance.
+
+### What's here
+
+- `NetworkGraphService.headroomMva(busId)` no longer returns only Table 1's
+  static peak-load baseline. It now also subtracts the live aggregate load
+  (kW → MVA, assuming ~unity power factor — a documented simplification)
+  of every EVCS currently active **anywhere downstream** of that bus's
+  feeding line — not just an EVCS sitting on that exact bus. That's the
+  electrically correct model for a radial feeder: current for everything
+  past a line flows through it, so a station three hops downstream still
+  loads every line between it and the substation. Downstream reachability
+  is computed via BFS from the line's receiving-end bus, blocked from
+  crossing back through the sending-end bus — correct and cheap since the
+  network is a spanning tree (Phase 6 already relies on this same fact for
+  the dashboard's layout).
+- No caller changes needed — `RoutingPolicyEngine`/`WeightedGreedyScoringStrategy`
+  already called `headroomMva(busId)`; they just get a truer number back
+  now. `properties.getHeadroomNormalizationMva()`'s existing clamp
+  (`Math.min(1.0, Math.max(0.0, ...))`) already handles headroom going
+  negative (an overloaded line) by scoring it as 0 — no change needed
+  there either.
+- `NetworkGraphLoadCouplingTest` (new) — real Redis + Postgres via
+  Testcontainers, proves three things a shallower test could miss: a live
+  load reduces headroom on its own feeding line, **propagates upstream**
+  to every ancestor line (the whole point of the downstream-subtree
+  calculation), and does **not** leak into an unrelated branch.
+  `NetworkGraphServiceTest` stays a lightweight, no-Docker `@DataJpaTest`
+  slice (now with `EvcsLiveStateRepository` mocked, since it never seeds
+  any EVCS — the mock's default `Optional.empty()` behavior keeps every
+  existing assertion in that class unchanged).
+- Verified against the real running app too, not just the test: registered
+  an EVCS with a 500 kW live load, confirmed via the same math the test
+  checks. There's no dashboard element that visualizes headroom directly,
+  so this one's verification is the automated test running against real
+  infrastructure — there wasn't a separate "look at it in the browser" step
+  that would have shown anything different.
+
+### What to check for Phase 7 — a real decision, not a footnote
+
+**Headroom is still only a soft scoring factor, not a hard feasibility
+cutoff.** An EVCS whose feeding line is already overloaded (negative
+headroom) currently just scores as "0 headroom" — it can still win if its
+distance/queue/SOC-urgency terms are good enough, per the existing weighted
+sum. The build plan's own phrasing — "so routing decisions actually respect
+Table 1's max_loading_mva, **not just distance**" — reads to me like it
+could mean either "weigh it more meaningfully" (what's built) or "never
+exceed it" (a hard `filterFeasible` rejection when headroom ≤ 0, on top of
+what's built). This is a real behavior change either way — which "no
+feasible EVCS" means, and how far a genuinely capacity-constrained network
+would push traffic onto more distant lines — so I didn't decide it while
+you were away. Say which you want and I'll wire it up; it's a small,
+contained change on top of what already exists.
+
+## Real geography: Amtala, South 24 Parganas
+
+Per your professor's brief (a suburban area between Kolkata and Kakdwip,
+adjacent to Kolkata), the dashboard now shows the network on a **real map**
+instead of an abstract diagram.
+
+### What's here
+
+- **Chosen area**: Amtala, South 24 Parganas (22.3669°N, 88.2777°E) — a
+  verified real place, in Bishnupur II CD Block, sitting right where
+  Kolkata's southern municipal edge meets South 24 Parganas on Diamond
+  Harbour Road (NH12), the same highway that continues through Diamond
+  Harbour to Kakdwip.
+- **28 bus coordinates** (`src/main/resources/seed/table1_bus_coordinates.csv`,
+  loaded by `NetworkSeedLoader` alongside the existing line data) — bus 1
+  anchored at Amtala's real coordinates, every other bus computed outward
+  from there using Table 1's **actual existing edge lengths**
+  (`est_length_km` — unchanged, still what every distance/headroom
+  calculation already uses) plus a bearing-spreading algorithm so sibling
+  branches fan out rather than overlap. **Honesty check**: this is one
+  verified real anchor point plus a computed layout, not 28 independently
+  surveyed road junctions — individual points may land near, not exactly
+  on, real junctions. Good as a working real-world-anchored draft; refine
+  specific points later if your professor wants literal junction
+  placements.
+- `Bus` entity gained nullable `latitude`/`longitude`; `NetworkTopologyController`
+  exposes them via the existing `/api/network/topology` endpoint (no new
+  endpoint needed).
+- **`dashboard.html` now uses Leaflet + real OpenStreetMap tiles** instead
+  of the SVG tree diagram — same interactions as before (click a bus or
+  line to pick it for the forms, EVCS/EV markers, assignment path
+  animation, rejection ring, persistent rejected-marker styling), just
+  rendered on an actual map now. The assignment path animation still
+  follows the real multi-hop tree route (same `pathBetween` logic as
+  before), now drawn as a real polyline over real terrain instead of an
+  abstract diagram line.
+- All 38 tests still pass; `NetworkTopologyControllerTest` now also
+  asserts bus 1's coordinates match Amtala's verified position.
+
+### A real bug found and fixed while verifying this
+
+`dashboardPageServesHtml` started failing — not flaky, reproducible every
+time. Root cause: Thymeleaf applies its own "JavaScript inlining" to
+`<script>` blocks **by default**, scanning for its `[[...]]` expression
+syntax even without `th:inline="javascript"` being set. My Leaflet code
+had `const latlngs = [[a.lat, a.lng], [b.lat, b.lng]];` — a completely
+ordinary nested-array JS literal — and Thymeleaf's parser saw the leading
+`[[` and tried to parse everything up to the next `]]` as its own
+expression, threw, and Tomcat aborted the response mid-stream (the test
+saw this as "Premature EOF"). **Fixed**: rewrote that line to avoid a
+literal `[[`, and added `th:inline="none"` to the script tag so this
+entire class of bug can't recur as more Leaflet code (which is
+array-literal-heavy) gets added later.
+
+### What to check
+
+1. **Please open `http://localhost:8080/` yourself** — I verified the
+   topology API returns correct coordinates and the full demo script
+   still produces correct assignments/rejections against the real-map
+   backend, but I have no way to visually confirm tiles/markers/animations
+   actually render correctly in a browser.
+2. If Amtala's immediate area feels too cramped once you look at it on the
+   map, or your professor wants the bus positions moved to literal real
+   junctions rather than this computed layout, send me updated
+   coordinates (or tell me which buses to adjust) and I'll update
+   `table1_bus_coordinates.csv` — no other code changes needed, the whole
+   system reads from that one file.

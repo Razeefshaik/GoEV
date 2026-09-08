@@ -1,6 +1,7 @@
 package com.goev.graph;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.data.Offset.offset;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,5 +26,14 @@ class NetworkTopologyControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().buses()).hasSize(28);
         assertThat(response.getBody().lines()).hasSize(27);
+
+        // Bus 1 is anchored to Amtala, South 24 Parganas — a verified real place.
+        assertThat(response.getBody().buses())
+                .filteredOn(bus -> bus.busId() == 1)
+                .singleElement()
+                .satisfies(bus -> {
+                    assertThat(bus.latitude()).isCloseTo(22.3669, offset(0.001));
+                    assertThat(bus.longitude()).isCloseTo(88.2777, offset(0.001));
+                });
     }
 }

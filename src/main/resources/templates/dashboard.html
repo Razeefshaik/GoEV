@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>GoEV Live Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
     <style>
         :root {
             --bg: #f4f6f9;
@@ -14,7 +15,8 @@
             --green: #16a34a;
             --amber: #d97706;
             --red: #dc2626;
-            --line: #b9c2d0;
+            --line: #7c3aed;
+            --line-casing: #ffffff;
         }
         * { box-sizing: border-box; }
         body {
@@ -65,7 +67,13 @@
         .card h2 .count { color: var(--muted); font-weight: 400; }
 
         #networkCard { position: relative; }
-        #networkSvg { width: 100%; height: auto; display: block; }
+        #mapContainer {
+            width: 100%;
+            height: 560px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #e5e9ef;
+        }
         #pickHint {
             display: none;
             margin-top: 0.5rem;
@@ -145,7 +153,7 @@
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
-            z-index: 100;
+            z-index: 1000;
         }
         .toast {
             padding: 0.6rem 0.9rem;
@@ -158,30 +166,43 @@
         }
         .toast.error { background: var(--red); }
 
+        /* Leaflet renders circleMarkers/polylines as real SVG elements, so these
+           class-based styles (including the CSS animations) apply directly. */
         .bus-dot { fill: #ffffff; stroke: var(--line); stroke-width: 1.5; cursor: pointer; }
         .bus-dot:hover { stroke: var(--accent); stroke-width: 2.4; }
-        .bus-label { font-size: 9px; fill: var(--muted); text-anchor: middle; pointer-events: none; }
-        .grid-line { stroke: var(--line); stroke-width: 1.4; cursor: pointer; }
-        .grid-line:hover { stroke: var(--accent); stroke-width: 2.4; }
-        .grid-line-hit { stroke: transparent; stroke-width: 10; cursor: pointer; }
-        .picked-ring { fill: none; stroke: var(--accent); stroke-width: 1.6; opacity: 0.9; }
-        .evcs-marker { stroke: white; stroke-width: 1.2; cursor: default; }
-        .ev-marker { stroke: white; stroke-width: 1; cursor: default; }
+        .bus-label {
+            background: rgba(255,255,255,0.85);
+            border: none;
+            box-shadow: none;
+            font-size: 10px;
+            color: var(--muted);
+            font-weight: 600;
+            padding: 0 3px;
+        }
+        .bus-label::before { display: none; }
+        .grid-line-casing { stroke: var(--line-casing); stroke-width: 6.5; stroke-opacity: 0.95; cursor: pointer; }
+        .grid-line { stroke: var(--line); stroke-width: 3.5; stroke-opacity: 0.95; cursor: pointer; }
+        .grid-line:hover { stroke: var(--accent); stroke-width: 5; }
+        .grid-line-hit { stroke: transparent; stroke-width: 14; cursor: pointer; }
+        .picked-ring { fill: none; stroke: var(--accent); stroke-width: 2; opacity: 0.9; }
+        .evcs-marker { stroke: white; stroke-width: 1.5; cursor: default; }
+        .ev-marker { stroke: white; stroke-width: 1.3; cursor: default; }
+        .ev-marker.rejected { stroke: var(--red); stroke-width: 2.6; }
         .assign-path {
             fill: none;
             stroke: var(--accent);
-            stroke-width: 2.4;
-            stroke-dasharray: 6 4;
+            stroke-width: 3.2;
+            stroke-dasharray: 8 6;
             opacity: 0.9;
             animation: dash 1s linear infinite;
         }
         .reject-flash {
             fill: none;
             stroke: var(--red);
-            stroke-width: 3;
+            stroke-width: 3.5;
             opacity: 0.85;
         }
-        @keyframes dash { to { stroke-dashoffset: -20; } }
+        @keyframes dash { to { stroke-dashoffset: -28; } }
         @keyframes fadeOut { 0% { opacity: 0.95; } 80% { opacity: 0.95; } 100% { opacity: 0; } }
         .fading { animation: fadeOut 1.4s ease-out forwards; }
     </style>
@@ -190,7 +211,7 @@
 <header>
     <div>
         <h1>GoEV — Live EV ⇄ EVCS Routing</h1>
-        <div class="tagline">28-bus distribution network · live MQTT feed via STOMP</div>
+        <div class="tagline">Amtala, South 24 Parganas — real network on a real map · live MQTT feed via STOMP</div>
     </div>
     <div id="connectionStatus" class="disconnected">Connecting…</div>
 </header>
@@ -198,9 +219,10 @@
 <main>
     <div class="card" id="networkCard">
         <h2>Distribution network</h2>
-        <svg id="networkSvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg>
-        <div id="pickHint">Click a bus (or a line — picks its near end) to fill in the bus field…</div>
+        <div id="mapContainer"></div>
+        <div id="pickHint">Click a bus marker (or a line — picks its near end) to fill in the bus field…</div>
         <div class="legend">
+            <span><span class="swatch" style="background:#7c3aed"></span>Distribution line</span>
             <span><span class="swatch" style="background:#16a34a"></span>EVCS — slot free</span>
             <span><span class="swatch" style="background:#d97706"></span>EVCS — queued only</span>
             <span><span class="swatch" style="background:#9ca3af"></span>EVCS — offline / full</span>
@@ -307,20 +329,21 @@
 
 <div id="toastStack"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
-<script>
-    const SVG_NS = 'http://www.w3.org/2000/svg';
-    const LEVEL_HEIGHT = 60;
-    const LEAF_SPACING = 70;
-    const MARGIN = 40;
-
+<script th:inline="none">
     const evRows = new Map();
     const evcsRows = new Map();
     const assignments = [];
-    let busPositions = new Map();
+    let busCoords = new Map();   // busId -> {lat, lng}
+    let busParents = new Map();  // busId -> parent busId (spanning tree)
     let evcsByBus = new Map();
+    const evLastOutcome = new Map();
     let pendingPickTarget = null;
+
+    let map;
+    let evcsLayerGroup, evLayerGroup, fxLayerGroup;
 
     function fmtTime(iso) {
         if (!iso) return '';
@@ -355,21 +378,15 @@
         disarmPick();
     }
     function flashPickedBus(busId) {
-        const p = busPositions.get(busId);
-        const svg = document.getElementById('networkSvg');
-        const fxLayer = svg.querySelector('#fxLayer');
-        if (!p || !fxLayer) return;
-        const ring = document.createElementNS(SVG_NS, 'circle');
-        ring.setAttribute('cx', p.x); ring.setAttribute('cy', p.y);
-        ring.setAttribute('r', 3.2);
-        ring.setAttribute('class', 'picked-ring');
-        fxLayer.appendChild(ring);
-        let r = 3.2;
+        const c = busCoords.get(busId);
+        if (!c || !fxLayerGroup) return;
+        const ring = L.circleMarker([c.lat, c.lng], { radius: 8, className: 'picked-ring' }).addTo(fxLayerGroup);
+        let r = 8;
         const grow = setInterval(() => {
-            r += 1.2;
-            ring.setAttribute('r', r);
-            ring.style.opacity = Math.max(0, 1 - (r - 3.2) / 10);
-            if (r > 13) { clearInterval(grow); ring.remove(); }
+            r += 3;
+            ring.setRadius(r);
+            ring.setStyle({ opacity: Math.max(0, 1 - (r - 8) / 24) });
+            if (r > 32) { clearInterval(grow); fxLayerGroup.removeLayer(ring); }
         }, 40);
     }
 
@@ -383,98 +400,82 @@
         });
     });
 
-    // ---- tree layout of the radial network (27 lines / 28 buses = a spanning tree) ----
-    function layoutTree(topology) {
-        const childrenOf = new Map();
-        topology.buses.forEach(b => childrenOf.set(b.busId, []));
-        topology.lines.forEach(l => childrenOf.get(l.seBus).push(l.reBus));
-
-        const parentOf = new Map();
-        topology.lines.forEach(l => parentOf.set(l.reBus, l.seBus));
-        const root = topology.buses.map(b => b.busId).find(id => !parentOf.has(id));
-
-        const positions = new Map();
-        let leafCounter = 0;
-
-        function place(busId, depth) {
-            const children = childrenOf.get(busId) || [];
-            if (children.length === 0) {
-                positions.set(busId, { x: leafCounter, y: depth });
-                leafCounter += 1;
-                return positions.get(busId).x;
+    // The network is a spanning tree (27 lines / 28 buses), so the path between
+    // any two buses is unique: walk both up to their lowest common ancestor.
+    // This is the actual route an assignment animation should follow — the
+    // straight-line distance between two bus positions is not the path distance
+    // the routing engine computed, and cuts across buses/lines not on the route.
+    function pathBetween(a, b) {
+        function ancestors(x) {
+            const chain = [x];
+            let cur = x;
+            while (busParents.has(cur)) {
+                cur = busParents.get(cur);
+                chain.push(cur);
             }
-            const xs = children.map(c => place(c, depth + 1));
-            const x = xs.reduce((a, b) => a + b, 0) / xs.length;
-            positions.set(busId, { x, y: depth });
-            return x;
+            return chain;
         }
-        place(root, 0);
-
-        const maxDepth = Math.max(...Array.from(positions.values()).map(p => p.y));
-        const scaled = new Map();
-        positions.forEach((p, busId) => {
-            scaled.set(busId, {
-                x: MARGIN + p.x * LEAF_SPACING,
-                y: MARGIN + p.y * LEVEL_HEIGHT
-            });
-        });
-        return { positions: scaled, width: MARGIN * 2 + leafCounter * LEAF_SPACING, height: MARGIN * 2 + maxDepth * LEVEL_HEIGHT };
+        const chainA = ancestors(a);
+        const chainB = ancestors(b);
+        const bIndex = new Map(chainB.map((busId, i) => [busId, i]));
+        let splitAt = chainA.length - 1;
+        for (let i = 0; i < chainA.length; i++) {
+            if (bIndex.has(chainA[i])) { splitAt = i; break; }
+        }
+        const lca = chainA[splitAt];
+        const upPart = chainA.slice(0, splitAt + 1);
+        const downPart = chainB.slice(0, bIndex.get(lca)).reverse();
+        return upPart.concat(downPart);
     }
 
     function drawNetwork(topology) {
-        const layout = layoutTree(topology);
-        busPositions = layout.positions;
+        busCoords = new Map(topology.buses
+            .filter(b => b.latitude != null && b.longitude != null)
+            .map(b => [b.busId, { lat: b.latitude, lng: b.longitude }]));
+        busParents = new Map(topology.lines.map(l => [l.reBus, l.seBus]));
 
-        const svg = document.getElementById('networkSvg');
-        svg.setAttribute('viewBox', `0 0 ${layout.width} ${layout.height}`);
-        svg.innerHTML = '';
+        const center = busCoords.get(1) || { lat: 22.3669, lng: 88.2777 };
+        map = L.map('mapContainer', { scrollWheelZoom: true }).setView([center.lat, center.lng], 12);
 
-        const linesGroup = document.createElementNS(SVG_NS, 'g');
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        const bounds = L.latLngBounds(Array.from(busCoords.values()).map(c => [c.lat, c.lng]));
+        map.fitBounds(bounds, { padding: [30, 30] });
+
+        const lineLayer = L.layerGroup().addTo(map);
         topology.lines.forEach(l => {
-            const a = busPositions.get(l.seBus), b = busPositions.get(l.reBus);
+            const a = busCoords.get(l.seBus), b = busCoords.get(l.reBus);
             if (!a || !b) return;
-            const line = document.createElementNS(SVG_NS, 'line');
-            line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
-            line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
-            line.setAttribute('class', 'grid-line');
-            const hit = document.createElementNS(SVG_NS, 'line');
-            hit.setAttribute('x1', a.x); hit.setAttribute('y1', a.y);
-            hit.setAttribute('x2', b.x); hit.setAttribute('y2', b.y);
-            hit.setAttribute('class', 'grid-line-hit');
-            hit.addEventListener('click', () => applyPickedBus(l.seBus));
-            const title = document.createElementNS(SVG_NS, 'title');
-            title.textContent = `Line ${l.lineId}: bus ${l.seBus} -> bus ${l.reBus} (${l.estLengthKm} km) — click picks bus ${l.seBus}`;
-            hit.appendChild(title);
-            linesGroup.appendChild(line);
-            linesGroup.appendChild(hit);
+            // Thymeleaf's default JS-inlining in <script> blocks treats a literal "[["
+            // as its own template-expression marker, so this can't be written as a
+            // single nested-array-literal expression — build it from two single-bracket points instead.
+            const pointA = [a.lat, a.lng];
+            const pointB = [b.lat, b.lng];
+            const latlngs = [pointA, pointB];
+            L.polyline(latlngs, { className: 'grid-line-casing' }).addTo(lineLayer);
+            L.polyline(latlngs, { className: 'grid-line' }).addTo(lineLayer);
+            L.polyline(latlngs, { className: 'grid-line-hit' })
+                .bindTooltip(`Line ${l.lineId}: bus ${l.seBus} -> bus ${l.reBus} (${l.estLengthKm} km)`)
+                .on('click', () => applyPickedBus(l.seBus))
+                .addTo(lineLayer);
         });
-        svg.appendChild(linesGroup);
 
-        const busGroup = document.createElementNS(SVG_NS, 'g');
+        const busLayer = L.layerGroup().addTo(map);
         topology.buses.forEach(bus => {
-            const p = busPositions.get(bus.busId);
-            if (!p) return;
-            const dot = document.createElementNS(SVG_NS, 'circle');
-            dot.setAttribute('cx', p.x); dot.setAttribute('cy', p.y);
-            dot.setAttribute('r', 3.2);
-            dot.setAttribute('class', 'bus-dot');
-            dot.addEventListener('click', () => applyPickedBus(bus.busId));
-            const title = document.createElementNS(SVG_NS, 'title');
-            title.textContent = `Bus ${bus.busId} — click to pick`;
-            dot.appendChild(title);
-            busGroup.appendChild(dot);
-
-            const label = document.createElementNS(SVG_NS, 'text');
-            label.setAttribute('x', p.x); label.setAttribute('y', p.y - 6);
-            label.setAttribute('class', 'bus-label');
-            label.textContent = bus.busId;
-            busGroup.appendChild(label);
+            const c = busCoords.get(bus.busId);
+            if (!c) return;
+            L.circleMarker([c.lat, c.lng], { radius: 5, className: 'bus-dot' })
+                .bindTooltip(String(bus.busId), { permanent: true, direction: 'top', offset: [0, -4], className: 'bus-label' })
+                .on('click', () => applyPickedBus(bus.busId))
+                .addTo(busLayer);
         });
-        svg.appendChild(busGroup);
 
-        svg.appendChild(document.createElementNS(SVG_NS, 'g')).setAttribute('id', 'evcsLayer');
-        svg.appendChild(document.createElementNS(SVG_NS, 'g')).setAttribute('id', 'evLayer');
-        svg.appendChild(document.createElementNS(SVG_NS, 'g')).setAttribute('id', 'fxLayer');
+        evcsLayerGroup = L.layerGroup().addTo(map);
+        evLayerGroup = L.layerGroup().addTo(map);
+        fxLayerGroup = L.layerGroup().addTo(map);
     }
 
     function evcsColor(evcs) {
@@ -491,66 +492,69 @@
     }
 
     function redrawOverlays() {
-        const svg = document.getElementById('networkSvg');
-        const evcsLayer = svg.querySelector('#evcsLayer');
-        const evLayer = svg.querySelector('#evLayer');
-        if (!evcsLayer || !evLayer) return;
+        if (!evcsLayerGroup || !evLayerGroup) return;
 
-        evcsLayer.innerHTML = '';
+        evcsLayerGroup.clearLayers();
         evcsByBus = new Map();
         evcsRows.forEach(evcs => {
-            const p = busPositions.get(evcs.busId);
-            if (!p) return;
+            const c = busCoords.get(evcs.busId);
+            if (!c) return;
             evcsByBus.set(evcs.evcsId, evcs.busId);
-            const rect = document.createElementNS(SVG_NS, 'rect');
-            rect.setAttribute('x', p.x + 5); rect.setAttribute('y', p.y - 5);
-            rect.setAttribute('width', 8); rect.setAttribute('height', 8);
-            rect.setAttribute('rx', 2);
-            rect.setAttribute('fill', evcsColor(evcs));
-            rect.setAttribute('class', 'evcs-marker');
-            const title = document.createElementNS(SVG_NS, 'title');
-            title.textContent = `${evcs.evcsId} — ${evcs.availableSlots ?? '?'} free / ${evcs.queueLength ?? '?'} queued`;
-            rect.appendChild(title);
-            evcsLayer.appendChild(rect);
+            L.circleMarker([c.lat, c.lng], {
+                radius: 8,
+                className: 'evcs-marker',
+                fillColor: evcsColor(evcs),
+                fillOpacity: 0.95
+            })
+                .bindTooltip(`${evcs.evcsId} — ${evcs.availableSlots ?? '?'} free / ${evcs.queueLength ?? '?'} queued`)
+                .addTo(evcsLayerGroup);
         });
 
-        evLayer.innerHTML = '';
+        evLayerGroup.clearLayers();
         const seenAtBus = new Map();
         evRows.forEach(ev => {
             const busId = ev.location ? parseInt(ev.location.nodeRef.replace('bus_', ''), 10) : null;
-            const p = busId != null ? busPositions.get(busId) : null;
-            if (!p) return;
+            const c = busId != null ? busCoords.get(busId) : null;
+            if (!c) return;
             const n = seenAtBus.get(busId) || 0;
             seenAtBus.set(busId, n + 1);
-            const jitter = (n % 3) * 4 - 4;
+            const jitter = (n % 3) * 0.00025 - 0.00025;
 
-            const dot = document.createElementNS(SVG_NS, 'circle');
-            dot.setAttribute('cx', p.x - 6 + jitter); dot.setAttribute('cy', p.y + 6);
-            dot.setAttribute('r', 3);
-            dot.setAttribute('fill', socColor(ev.socPercent));
-            dot.setAttribute('class', 'ev-marker');
-            const title = document.createElementNS(SVG_NS, 'title');
-            title.textContent = `${ev.evId} — SOC ${ev.socPercent ?? '?'}%`;
-            dot.appendChild(title);
-            evLayer.appendChild(dot);
+            const wasRejected = evLastOutcome.get(ev.evId) === true;
+            L.circleMarker([c.lat + jitter, c.lng + jitter], {
+                radius: 6,
+                className: 'ev-marker' + (wasRejected ? ' rejected' : ''),
+                fillColor: socColor(ev.socPercent),
+                fillOpacity: 0.95
+            })
+                .bindTooltip(`${ev.evId} — SOC ${ev.socPercent ?? '?'}%` +
+                    (wasRejected ? ' (last request rejected — no feasible EVCS)' : ''))
+                .addTo(evLayerGroup);
         });
     }
 
     function flashAssignment(evBusId, evcsBusId, rejected) {
-        const svg = document.getElementById('networkSvg');
-        const fxLayer = svg.querySelector('#fxLayer');
-        if (!fxLayer) return;
-        const a = evBusId != null ? busPositions.get(evBusId) : null;
-        const b = evcsBusId != null ? busPositions.get(evcsBusId) : null;
-        if (!a || !b) return;
+        if (!fxLayerGroup || evBusId == null || !busCoords.has(evBusId)) return;
 
-        const path = document.createElementNS(SVG_NS, 'line');
-        path.setAttribute('x1', a.x); path.setAttribute('y1', a.y);
-        path.setAttribute('x2', b.x); path.setAttribute('y2', b.y);
-        path.setAttribute('class', rejected ? 'reject-flash' : 'assign-path');
-        fxLayer.appendChild(path);
-        setTimeout(() => path.classList.add('fading'), rejected ? 900 : 2200);
-        setTimeout(() => path.remove(), rejected ? 2300 : 3600);
+        // A rejection has no target EVCS to draw a path to — there's nothing wrong
+        // with that, but drawing nothing at all looked exactly like success, since
+        // the EV marker's own color is SOC-based, not outcome-based. Draw a red
+        // ring at the EV's own bus instead.
+        if (rejected || evcsBusId == null || !busCoords.has(evcsBusId)) {
+            const c = busCoords.get(evBusId);
+            const ring = L.circleMarker([c.lat, c.lng], { radius: 14, className: 'reject-flash' }).addTo(fxLayerGroup);
+            setTimeout(() => ring.getElement()?.classList.add('fading'), 900);
+            setTimeout(() => fxLayerGroup.removeLayer(ring), 2300);
+            return;
+        }
+
+        const routeBusIds = pathBetween(evBusId, evcsBusId);
+        const latlngs = routeBusIds.map(busId => busCoords.get(busId)).filter(Boolean).map(c => [c.lat, c.lng]);
+        if (latlngs.length < 2) return;
+
+        const poly = L.polyline(latlngs, { className: 'assign-path' }).addTo(fxLayerGroup);
+        setTimeout(() => poly.getElement()?.classList.add('fading'), 2200);
+        setTimeout(() => fxLayerGroup.removeLayer(poly), 3600);
     }
 
     function busIdFromNodeRef(nodeRef) {
@@ -649,7 +653,7 @@
             maxDetourKm: parseFloat(document.getElementById('reqDetourInput').value)
         };
         fetch('/api/demo/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-            .then(r => { if (!r.ok) throw new Error('server rejected the request'); toast(`Request sent for ${evId} — watch the network diagram`); })
+            .then(r => { if (!r.ok) throw new Error('server rejected the request'); toast(`Request sent for ${evId} — watch the map`); })
             .catch(err => toast('Failed to send request: ' + err.message, true));
     });
 
@@ -663,7 +667,11 @@
         .then(snapshot => {
             (snapshot.evs || []).forEach(ev => evRows.set(ev.evId, ev));
             (snapshot.evcsStations || []).forEach(evcs => evcsRows.set(evcs.evcsId, evcs));
-            (snapshot.recentAssignments || []).forEach(a => assignments.push(a));
+            // recentAssignments is newest-first, so the first one seen per evId is its latest outcome.
+            (snapshot.recentAssignments || []).forEach(a => {
+                assignments.push(a);
+                if (!evLastOutcome.has(a.evId)) evLastOutcome.set(a.evId, !a.evcsId);
+            });
             redrawTable('evTableBody', evRows, renderEvRow, 'evCount', 'EVs');
             redrawTable('evcsTableBody', evcsRows, renderEvcsRow, 'evcsCount', 'stations');
             redrawAssignments();
@@ -694,7 +702,9 @@
                 const a = JSON.parse(msg.body);
                 assignments.unshift(a);
                 if (assignments.length > 20) assignments.pop();
+                evLastOutcome.set(a.evId, !a.evcsId);
                 redrawAssignments();
+                redrawOverlays();
 
                 const ev = evRows.get(a.evId);
                 const evBusId = ev ? busIdFromNodeRef(ev.location && ev.location.nodeRef) : null;

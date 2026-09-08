@@ -16,6 +16,7 @@ import com.goev.mqtt.MqttGateway;
 import com.goev.state.Assignment;
 import com.goev.state.AssignmentRepository;
 import com.goev.state.AssignmentStatus;
+import com.goev.state.StateService;
 
 /**
  * The persistence + MQTT publishing side effects shared by every
@@ -34,13 +35,16 @@ public class ReservationService {
     private final MqttGateway mqttGateway;
     private final RoutingProperties properties;
     private final List<AssignmentListener> listeners;
+    private final StateService stateService;
 
     public ReservationService(AssignmentRepository assignmentRepository, MqttGateway mqttGateway,
-                               RoutingProperties properties, List<AssignmentListener> listeners) {
+                               RoutingProperties properties, List<AssignmentListener> listeners,
+                               StateService stateService) {
         this.assignmentRepository = assignmentRepository;
         this.mqttGateway = mqttGateway;
         this.properties = properties;
         this.listeners = listeners;
+        this.stateService = stateService;
     }
 
     public void reserve(ChargeRequestMessage request, RoutingCandidate candidate, String reasonCode) {
@@ -52,6 +56,13 @@ public class ReservationService {
 
         assignmentRepository.save(new Assignment(
                 assignmentId, request.requestId(), evcsId, reservedAt, expiresAt, AssignmentStatus.RESERVED));
+
+        // The occupation window is the reservation TTL, not a real energy-needed/charge-rate
+        // estimate — a deliberate simplification (see README) until session-level charging
+        // duration is modeled. Without this, the same slot could be handed to a second
+        // request before the first EV ever "left", since greedy only sees the EVCS's
+        // self-reported live state, and nothing decremented it here before now.
+        stateService.occupySlot(evcsId, properties.getReservationTtlSeconds());
 
         int etaMin = (int) Math.round(candidate.distanceKm() / properties.getAssumedAvgSpeedKmh() * 60.0);
 
