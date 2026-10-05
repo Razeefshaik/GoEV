@@ -58,6 +58,7 @@ public class Evcs {
     public Integer getTotalSlots() {
         return totalSlots;
     }
+    public void setTotalSlots(Integer totalSlots){this.totalSlots=totalSlots;}
 
     public Double getChargeRateKw() {
         return chargeRateKw;

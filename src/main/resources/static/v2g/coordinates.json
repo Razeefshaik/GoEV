@@ -1,0 +1,142 @@
+﻿[
+  {
+    "bus_id": "1",
+    "latitude": "22.366900",
+    "longitude": "88.277700"
+  },
+  {
+    "bus_id": "2",
+    "latitude": "22.341987",
+    "longitude": "88.267896"
+  },
+  {
+    "bus_id": "3",
+    "latitude": "22.304042",
+    "longitude": "88.252969"
+  },
+  {
+    "bus_id": "4",
+    "latitude": "22.276449",
+    "longitude": "88.242116"
+  },
+  {
+    "bus_id": "5",
+    "latitude": "22.234987",
+    "longitude": "88.246035"
+  },
+  {
+    "bus_id": "6",
+    "latitude": "22.205312",
+    "longitude": "88.264540"
+  },
+  {
+    "bus_id": "7",
+    "latitude": "22.180739",
+    "longitude": "88.302432"
+  },
+  {
+    "bus_id": "8",
+    "latitude": "22.176062",
+    "longitude": "88.331057"
+  },
+  {
+    "bus_id": "9",
+    "latitude": "22.179863",
+    "longitude": "88.346376"
+  },
+  {
+    "bus_id": "10",
+    "latitude": "22.186513",
+    "longitude": "88.373188"
+  },
+  {
+    "bus_id": "11",
+    "latitude": "22.231559",
+    "longitude": "88.193629"
+  },
+  {
+    "bus_id": "12",
+    "latitude": "22.212735",
+    "longitude": "88.173297"
+  },
+  {
+    "bus_id": "13",
+    "latitude": "22.196804",
+    "longitude": "88.156092"
+  },
+  {
+    "bus_id": "14",
+    "latitude": "22.189567",
+    "longitude": "88.148277"
+  },
+  {
+    "bus_id": "15",
+    "latitude": "22.180887",
+    "longitude": "88.138903"
+  },
+  {
+    "bus_id": "16",
+    "latitude": "22.181111",
+    "longitude": "88.224859"
+  },
+  {
+    "bus_id": "17",
+    "latitude": "22.174717",
+    "longitude": "88.267430"
+  },
+  {
+    "bus_id": "18",
+    "latitude": "22.156369",
+    "longitude": "88.269163"
+  },
+  {
+    "bus_id": "19",
+    "latitude": "22.121698",
+    "longitude": "88.272438"
+  },
+  {
+    "bus_id": "20",
+    "latitude": "22.091103",
+    "longitude": "88.275327"
+  },
+  {
+    "bus_id": "21",
+    "latitude": "22.012219",
+    "longitude": "88.282771"
+  },
+  {
+    "bus_id": "22",
+    "latitude": "22.150597",
+    "longitude": "88.321220"
+  },
+  {
+    "bus_id": "23",
+    "latitude": "22.129334",
+    "longitude": "88.334472"
+  },
+  {
+    "bus_id": "24",
+    "latitude": "22.111615",
+    "longitude": "88.345514"
+  },
+  {
+    "bus_id": "25",
+    "latitude": "22.102752",
+    "longitude": "88.351037"
+  },
+  {
+    "bus_id": "26",
+    "latitude": "22.095665",
+    "longitude": "88.355454"
+  },
+  {
+    "bus_id": "27",
+    "latitude": "22.169021",
+    "longitude": "88.341916"
+  },
+  {
+    "bus_id": "28",
+    "latitude": "22.165498",
+    "longitude": "88.347349"
+  }
+]

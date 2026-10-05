@@ -83,7 +83,7 @@ class BatchAssignmentStrategyTest {
         verify(batchOptimizer).solve(captor.capture());
         assertThat(captor.getValue()).containsOnlyKeys(reqA, reqB);
 
-        verify(reservationService).reserve(reqA, candidate, "batch_joint_optimal");
+        verify(reservationService).reserve(reqA, candidate, "batch_joint_heuristic");
         verify(reservationService).reject(reqB);
 
         // A second close with nothing new queued should not re-solve or re-notify.

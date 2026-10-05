@@ -10,6 +10,12 @@ public record EvcsStatusMessage(
         Integer availableSlots,
         Integer queueLength,
         Double chargeRateKw,
-        Double currentLoadKw
+        Double currentLoadKw,
+        Integer totalSlots,
+        List<String> committedReservationIds
 ) {
+    public EvcsStatusMessage(String evcsId,Integer busId,List<String> connectorTypes,Integer availableSlots,
+            Integer queueLength,Double chargeRateKw,Double currentLoadKw) {
+        this(evcsId,busId,connectorTypes,availableSlots,queueLength,chargeRateKw,currentLoadKw,null,null);
+    }
 }

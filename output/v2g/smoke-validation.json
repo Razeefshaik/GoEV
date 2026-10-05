@@ -1,0 +1,23 @@
+{
+  "api": {
+    "passed": true,
+    "runId": "67698ce7-e4d1-455f-804d-dd7b42e6fae4",
+    "concurrentDuplicateStart": true,
+    "duplicateTick": true,
+    "cancelExactlyOnce": true
+  },
+  "mqtt": {
+    "passed": true,
+    "commandsAcknowledged": 17,
+    "simulatedMeterTransitions": true,
+    "broker": "Mosquitto localhost:18884"
+  },
+  "browser": {
+    "passed": true,
+    "pageErrors": [],
+    "busRows": 28,
+    "lineRows": 27,
+    "startAndAdvance": true,
+    "desktopAndMobile": true
+  }
+}

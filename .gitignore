@@ -6,3 +6,12 @@ build/
 .vscode/
 .DS_Store
 !gradle/wrapper/gradle-wrapper.jar
+var/
+__pycache__/
+*.sqlite
+hs_err_pid*.log
+replay_pid*.log
+bin/
+output/v2g/*-none.json
+output/v2g/*-nearest.json
+output/v2g/*-coordinated.json

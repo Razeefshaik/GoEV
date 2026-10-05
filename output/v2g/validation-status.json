@@ -1,0 +1,86 @@
+{
+  "timestampUtc": "2026-10-05T13:08:09.454687+00:00",
+  "fullGradleSuite": {
+    "tests": 52,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "finalTargetedGradleSuite": {
+    "tests": 15,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "pythonDeviceStateTests": {
+    "passed": true,
+    "count": 2
+  },
+  "smoke": {
+    "api": {
+      "passed": true,
+      "runId": "67698ce7-e4d1-455f-804d-dd7b42e6fae4",
+      "concurrentDuplicateStart": true,
+      "duplicateTick": true,
+      "cancelExactlyOnce": true
+    },
+    "mqtt": {
+      "passed": true,
+      "commandsAcknowledged": 17,
+      "simulatedMeterTransitions": true,
+      "broker": "Mosquitto localhost:18884"
+    },
+    "browser": {
+      "passed": true,
+      "pageErrors": [],
+      "busRows": 28,
+      "lineRows": 27,
+      "startAndAdvance": true,
+      "desktopAndMobile": true
+    }
+  },
+  "independentNumericalCases": [
+    {
+      "case": "moderate-shortage-none",
+      "maxVoltageErrorPu": 6.2378990861589045e-12,
+      "maxBranchPowerErrorKwKvar": 6.053835477359826e-08,
+      "lossErrorKw": 4.414367538174702e-09,
+      "kclResidualA": 5.125233570879573e-12
+    },
+    {
+      "case": "moderate-shortage-coordinated",
+      "maxVoltageErrorPu": 5.609956943430916e-12,
+      "maxBranchPowerErrorKwKvar": 5.651475021295482e-08,
+      "lossErrorKw": 4.117154617233609e-09,
+      "kclResidualA": 6.2025939939758246e-12
+    },
+    {
+      "case": "weak-voltage-coordinated",
+      "maxVoltageErrorPu": 2.1815438344674476e-11,
+      "maxBranchPowerErrorKwKvar": 1.200212977892079e-07,
+      "lossErrorKw": 1.0364626490400042e-08,
+      "kclResidualA": 4.271250020337902e-12
+    },
+    {
+      "case": "excess-injection-coordinated",
+      "maxVoltageErrorPu": 6.6814331844966546e-12,
+      "maxBranchPowerErrorKwKvar": 6.58116050544777e-08,
+      "lossErrorKw": 4.918671692166754e-09,
+      "kclResidualA": 6.24211793365248e-12
+    }
+  ],
+  "benchmarkCases": 39,
+  "identicalInputsAndHorizonsVerified": true,
+  "software": {
+    "java": "21.0.5",
+    "python": "3.13.5",
+    "numpy": "2.4.4",
+    "scipy": "1.18.1",
+    "gradle": "8.14.1",
+    "springBoot": "3.3.4",
+    "timefold": "2.5.0"
+  },
+  "hardwareValidation": "not performed; software simulation only",
+  "islandedOperation": "unsupported",
+  "testsNote": "Full suite followed by targeted rerun covering final changes; overlapping tests are not added as unique tests"
+}

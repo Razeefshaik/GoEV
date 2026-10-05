@@ -52,7 +52,7 @@ public class BatchAssignmentStrategy implements AssignmentStrategy {
         Map<ChargeRequestMessage, Optional<RoutingCandidate>> results = batchOptimizer.solve(feasibleByRequest);
 
         results.forEach((request, candidateOpt) -> candidateOpt.ifPresentOrElse(
-                candidate -> reservationService.reserve(request, candidate, "batch_joint_optimal"),
+                candidate -> reservationService.reserve(request, candidate, "batch_joint_heuristic"),
                 () -> reservationService.reject(request)));
     }
 

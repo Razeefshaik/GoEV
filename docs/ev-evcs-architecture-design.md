@@ -402,3 +402,9 @@ Estimated line lengths (km, from the earlier conversation, assuming
 R ≈ 0.4 Ω/km) can be regenerated the same way if needed — they aren't
 required for the routing math itself, only for a more realistic distance
 estimate if real conductor data isn't supplied.
+# Implemented V2G extension
+
+The current grid-connected research architecture, authoritative session ledger,
+units, Weasel provenance, dispatch equations and implementation boundaries are
+documented in [v2g-research.md](v2g-research.md). The original charging design
+below is historical; the extension document records shared correctness changes.

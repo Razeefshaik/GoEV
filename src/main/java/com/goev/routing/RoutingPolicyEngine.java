@@ -55,6 +55,7 @@ public class RoutingPolicyEngine {
     }
 
     public List<RoutingCandidate> filterFeasible(ChargeRequestMessage request) {
+        if(request.location()==null || (request.location().offsetKm()!=null && request.location().offsetKm()!=0)) return List.of();
         int requestBusId = request.location().busId();
         String requiredConnector = extractConnectorType(request.evModel());
         Optional<Ev> ev = evRepository.findById(request.evId());
@@ -64,6 +65,8 @@ public class RoutingPolicyEngine {
                 .map(evcs -> stateService.getEvcsState(evcs.getEvcsId()).map(live -> Map.entry(evcs, live)))
                 .flatMap(Optional::stream)
                 .filter(entry -> hasSlotOrAcceptableQueue(entry.getValue()))
+                .filter(entry -> entry.getValue().getCurrentLoadKw()!=null && Double.isFinite(entry.getValue().getCurrentLoadKw())
+                        && entry.getValue().getCurrentLoadKw()>=0)
                 .filter(entry -> connectorMatches(entry.getValue().getConnectorTypes(), requiredConnector))
                 .map(entry -> toCandidateWithDistance(requestBusId, entry.getKey(), entry.getValue()))
                 .flatMap(Optional::stream)
@@ -94,8 +97,10 @@ public class RoutingPolicyEngine {
         Double batteryCapacityKwh = request.batteryCapacityKwh() != null
                 ? request.batteryCapacityKwh() : ev.map(Ev::getBatteryCapacityKwh).orElse(null);
         if (batteryCapacityKwh == null || request.socPercent() == null) {
-            return Double.MAX_VALUE;
+            return -1; // Unknown energy is not unlimited driving range.
         }
+        if(!Double.isFinite(batteryCapacityKwh) || batteryCapacityKwh<=0 || !Double.isFinite(request.socPercent())
+                || request.socPercent()<0 || request.socPercent()>100) return -1;
         double minSocThresholdPercent = ev.map(Ev::getMinSocThresholdPercent)
                 .orElse(properties.getDefaultMinSocThresholdPercent());
         double energyConsumptionKwhPerKm = ev.map(Ev::getEnergyConsumptionKwhPerKm)
@@ -111,8 +116,7 @@ public class RoutingPolicyEngine {
         if (slots != null && slots > 0) {
             return true;
         }
-        Integer queue = live.getQueueLength();
-        return queue != null && queue <= properties.getMaxAcceptableQueueLength();
+        return false; // No queued admission model exists; only reserve actual free ports.
     }
 
     private boolean connectorMatches(List<String> stationConnectors, String requiredConnector) {

@@ -125,3 +125,9 @@ specifically want to confirm "does this work on real hardware," not for
 every code change. That's lower-risk for the hardware (SD card wear from
 constant reboots/reflashing) and faster for you (no SSH round-trip per
 test).
+# V2G communications scope
+
+The Pi may run `../v2g_station.py` against the configured broker using the
+[V2G demonstration](../../docs/v2g-research.md#optional-mqtt-demonstration).
+This exercises persistent commands and acknowledgements only. It does not
+demonstrate a physical bidirectional inverter, BMS, protection or islanded backup.

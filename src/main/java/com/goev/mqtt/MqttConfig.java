@@ -51,7 +51,7 @@ public class MqttConfig {
                 mqttClientFactory(),
                 properties.getEvStatusTopic(),
                 properties.getEvRequestTopic(),
-                properties.getEvcsStatusTopic());
+                properties.getEvcsStatusTopic(),"evcs/+/ack");
         adapter.setCompletionTimeout(5000);
         adapter.setQos(properties.getQosStateChange());
         adapter.setOutputChannel(mqttInboundChannel());

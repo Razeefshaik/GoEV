@@ -1,0 +1,34 @@
+{
+  "reference": "SciPy HYBR nodal KCL equations",
+  "limitations": "Independent numerical algorithm; same assumed physical model, no hardware validation",
+  "cases": [
+    {
+      "case": "moderate-shortage-none",
+      "maxVoltageErrorPu": 6.2378990861589045e-12,
+      "maxBranchPowerErrorKwKvar": 6.053835477359826e-08,
+      "lossErrorKw": 4.414367538174702e-09,
+      "kclResidualA": 5.125233570879573e-12
+    },
+    {
+      "case": "moderate-shortage-coordinated",
+      "maxVoltageErrorPu": 5.609956943430916e-12,
+      "maxBranchPowerErrorKwKvar": 5.651475021295482e-08,
+      "lossErrorKw": 4.117154617233609e-09,
+      "kclResidualA": 6.2025939939758246e-12
+    },
+    {
+      "case": "weak-voltage-coordinated",
+      "maxVoltageErrorPu": 2.1815438344674476e-11,
+      "maxBranchPowerErrorKwKvar": 1.200212977892079e-07,
+      "lossErrorKw": 1.0364626490400042e-08,
+      "kclResidualA": 4.271250020337902e-12
+    },
+    {
+      "case": "excess-injection-coordinated",
+      "maxVoltageErrorPu": 6.6814331844966546e-12,
+      "maxBranchPowerErrorKwKvar": 6.58116050544777e-08,
+      "lossErrorKw": 4.918671692166754e-09,
+      "kclResidualA": 6.24211793365248e-12
+    }
+  ]
+}

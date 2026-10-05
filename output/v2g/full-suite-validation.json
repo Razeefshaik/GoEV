@@ -1,0 +1,124 @@
+{
+  "timestampUtc": "2026-10-05T12:52:34.841575+00:00",
+  "scope": "Full Gradle suite before final targeted snapshot/mode/page fixes",
+  "totals": {
+    "tests": 52,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "suites": [
+    {
+      "name": "com.goev.dashboard.DashboardControllerTest",
+      "tests": 3,
+      "failures": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-05T12:45:06.402Z"
+    },
+    {
+      "name": "com.goev.dashboard.DemoControllerTest",
+      "tests": 2,
+      "failures": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-05T12:45:14.514Z"
+    },
+    {
+      "name": "com.goev.graph.NetworkGraphLoadCouplingTest",
+      "tests": 1,
+      "failures": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-05T12:45:21.771Z"
+    },
+    {
+      "name": "com.goev.graph.NetworkGraphServiceTest",
+      "tests": 6,
+      "failures": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-05T12:45:24.844Z"
+    },
+    {
+      "name": "com.goev.graph.NetworkTopologyControllerTest",
+      "tests": 1,
+      "failures": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-05T12:45:25.317Z"
+    },
+    {
+      "name": "com.goev.mqtt.MqttGatewayIntegrationTest",
+      "tests": 2,
+      "failures": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-05T12:45:30.108Z"
+    },
+    {
+      "name": "com.goev.routing.BatchAssignmentStrategyTest",
+      "tests": 2,
+      "failures": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-05T12:45:32.645Z"
+    },
+    {
+      "name": "com.goev.routing.BatchOptimizerTest",
+      "tests": 3,
+      "failures": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-05T12:45:33.242Z"
+    },
+    {
+      "name": "com.goev.routing.BatchUnassignedScoreTest",
+      "tests": 1,
+      "failures": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-05T12:45:35.515Z"
+    },
+    {
+      "name": "com.goev.routing.ChargingAdmissionTest",
+      "tests": 2,
+      "failures": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-05T12:44:23.422Z"
+    },
+    {
+      "name": "com.goev.routing.RoutingCoordinatorIntegrationTest",
+      "tests": 2,
+      "failures": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-05T12:45:50.329Z"
+    },
+    {
+      "name": "com.goev.routing.RoutingPolicyEngineTest",
+      "tests": 6,
+      "failures": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-05T12:45:56.584Z"
+    },
+    {
+      "name": "com.goev.routing.WeightedGreedyScoringStrategyTest",
+      "tests": 3,
+      "failures": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-05T12:45:57.174Z"
+    },
+    {
+      "name": "com.goev.state.StateServiceIntegrationTest",
+      "tests": 7,
+      "failures": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-05T12:44:50.837Z"
+    },
+    {
+      "name": "com.goev.v2g.ResearchLedgerTest",
+      "tests": 2,
+      "failures": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-05T12:45:57.184Z"
+    },
+    {
+      "name": "com.goev.v2g.ResearchModelTest",
+      "tests": 9,
+      "failures": 0,
+      "skipped": 0,
+      "timestamp": "2026-10-05T12:46:03.927Z"
+    }
+  ]
+}
