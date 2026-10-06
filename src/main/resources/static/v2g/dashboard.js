@@ -147,8 +147,12 @@ function selected() {
   return scenarios.find((s) => s.id === el("scenario").value);
 }
 function fillConfig() {
-  el("config").value = JSON.stringify(selected(), null, 2);
+  const scenario = window.loadScenarioDraft
+    ? window.loadScenarioDraft(selected())
+    : selected();
+  el("config").value = JSON.stringify(scenario, null, 2);
   clearPolicyComparison();
+  window.renderScenarioBuilder?.();
 }
 function setControls() {
   for (const id of [
@@ -158,8 +162,15 @@ function setControls() {
     "hours",
     "heartbeat",
     "compare",
+    "addEv",
+    "addStation",
+    "applyDraft",
+    "resetDraft",
   ])
     el(id).disabled = busy;
+  document
+    .querySelectorAll(".draft-row button")
+    .forEach((button) => (button.disabled = busy));
   for (const id of ["advance", "finish", "play"])
     el(id).disabled =
       busy || !run || run.hour >= run.scenario.settings.horizonHours - 1e-8;
@@ -1469,6 +1480,7 @@ async function render(previousHour = run.hour) {
   charts();
   network(previousHour);
   if (selectedEntity) inspect(selectedEntity.type, selectedEntity.id, false);
+  window.renderScenarioBuilder?.();
   setControls();
 }
 el("start").onclick = () => {
@@ -1506,7 +1518,10 @@ el("play").onclick = () => {
 };
 el("compare").onclick = () => act(comparePolicies);
 el("scenario").onchange = fillConfig;
-el("config").oninput = clearPolicyComparison;
+el("config").oninput = () => {
+  clearPolicyComparison();
+  window.saveScenarioDraft?.();
+};
 el("policy").onchange = clearPolicyComparison;
 el("heartbeat").onchange = () => {
   if (run) {
@@ -1591,29 +1606,34 @@ window.addEventListener(
   },
   { passive: true },
 );
-act(async () => {
-  scenarios = await api("/scenarios");
-  for (const s of scenarios) {
-    const option = document.createElement("option");
-    option.value = s.id;
-    option.textContent = s.id.replaceAll("-", " ");
-    el("scenario").append(option);
-  }
-  el("scenario").value = "moderate-shortage";
-  fillConfig();
-  const id = localStorage.getItem("goev-v2g-run");
-  if (id) {
-    try {
-      run = await api("/runs/" + id);
-      el("scenario").value = scenarios.some((s) => s.id === run.scenario.id)
-        ? run.scenario.id
-        : "moderate-shortage";
-      el("policy").value = run.policy;
-      el("config").value = JSON.stringify(run.scenario, null, 2);
-      await render();
-    } catch (e) {
-      localStorage.removeItem("goev-v2g-run");
-      run = null;
+document.addEventListener("DOMContentLoaded", () =>
+  act(async () => {
+    scenarios = await api("/scenarios");
+    for (const s of scenarios) {
+      const option = document.createElement("option");
+      option.value = s.id;
+      option.textContent = s.id.replaceAll("-", " ");
+      el("scenario").append(option);
     }
-  }
-});
+    el("scenario").value = "moderate-shortage";
+    fillConfig();
+    const id = localStorage.getItem("goev-v2g-run");
+    if (id) {
+      try {
+        run = await api("/runs/" + id);
+        el("scenario").value = scenarios.some((s) => s.id === run.scenario.id)
+          ? run.scenario.id
+          : "moderate-shortage";
+        el("policy").value = run.policy;
+        const draft = window.loadScenarioDraft
+          ? window.loadScenarioDraft(run.scenario)
+          : run.scenario;
+        el("config").value = JSON.stringify(draft, null, 2);
+        await render();
+      } catch (e) {
+        localStorage.removeItem("goev-v2g-run");
+        run = null;
+      }
+    }
+  }),
+);

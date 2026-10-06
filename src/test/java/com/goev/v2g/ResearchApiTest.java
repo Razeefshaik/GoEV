@@ -23,6 +23,7 @@ class ResearchApiTest {
         assertThat(page.getBody()).contains("Neighbourhood supply support","/v2g/dashboard.js","/v2g/dashboard.css");
         assertThat(http.getForEntity("/v2g/dashboard.js",String.class).getBody()).contains("/api/v2g","comparePolicies");
         assertThat(http.getForEntity("/v2g/coordinates.json",String.class).getStatusCode().value()).isEqualTo(200);
+        assertThat(http.getForEntity("/v2g/customizer.js",String.class).getBody()).contains("entityForm","draftScenario");
     }
     @Test void apiDeduplicatesAndRejectsUnsupportedModeAndOffsets() {
         String requestId=UUID.randomUUID().toString();

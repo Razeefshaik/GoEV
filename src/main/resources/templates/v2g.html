@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/v2g/dashboard.css" />
     <script defer src="/v2g/vendor/leaflet.js"></script>
     <script defer src="/v2g/dashboard.js"></script>
+    <script defer src="/v2g/customizer.js"></script>
   </head>
   <body>
     <a class="skip" href="#main">Skip to dashboard</a>
@@ -99,6 +100,62 @@
             </button>
           </div>
           <p id="error" role="alert" hidden></p>
+        </section>
+        <section class="panel custom-builder" id="customBuilder">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">BUILD YOUR OWN EXPERIMENT</p>
+              <h2>Add your EVs and stations.</h2>
+              <p>
+                Choose an electrical bus, set the battery or equipment limits,
+                then start a new run.
+              </p>
+            </div>
+            <button
+              id="builderToggle"
+              class="ghost"
+              aria-expanded="false"
+              aria-controls="builderBody"
+            >
+              Customize fleet &amp; stations
+            </button>
+          </div>
+          <div id="builderBody" hidden>
+            <p class="draft-note" id="draftStatus" role="status">
+              Changes configure the next experiment. The running experiment
+              stays as it is.
+            </p>
+            <div class="builder-columns">
+              <div>
+                <div class="builder-heading">
+                  <h3>Electric vehicles <span id="draftEvCount"></span></h3>
+                  <button id="addEv" class="primary small">+ Add EV</button>
+                </div>
+                <div id="draftEvs" class="draft-list"></div>
+              </div>
+              <div>
+                <div class="builder-heading">
+                  <h3>
+                    Bidirectional stations <span id="draftStationCount"></span>
+                  </h3>
+                  <button id="addStation" class="primary small">
+                    + Add EVCS
+                  </button>
+                </div>
+                <div id="draftStations" class="draft-list"></div>
+              </div>
+            </div>
+            <div class="builder-actions">
+              <button id="applyDraft" class="primary">
+                Apply &amp; start new run</button
+              ><button id="resetDraft" class="ghost">
+                Restore scenario defaults</button
+              ><span class="muted"
+                >Drafts are saved in this browser. Started runs are saved by the
+                server.</span
+              >
+            </div>
+          </div>
         </section>
         <div class="run-strip">
           <div>
@@ -462,6 +519,32 @@
         </footer>
       </main>
     </div>
+    <dialog id="entityDialog" aria-labelledby="entityTitle">
+      <form id="entityForm">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">CUSTOM SCENARIO</p>
+            <h2 id="entityTitle">Add EV</h2>
+          </div>
+          <button
+            id="closeEntity"
+            type="button"
+            class="ghost"
+            aria-label="Close editor"
+          >
+            ✕
+          </button>
+        </div>
+        <p id="entityHelp" class="muted"></p>
+        <div id="entityFields" class="entity-fields"></div>
+        <p id="entityError" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button id="saveEntity" type="submit" class="primary">
+            Save to scenario</button
+          ><button id="cancelEntity" type="button" class="ghost">Cancel</button>
+        </div>
+      </form>
+    </dialog>
     <div id="chartTooltip" role="status" hidden></div>
   </body>
 </html>

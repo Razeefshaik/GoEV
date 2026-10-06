@@ -11,6 +11,29 @@ unserved load. This is a research simulation, not a blackout or hardware control
 The redesigned `/v2g` dashboard provides a network inspector, animated EV travel
 and power-flow direction, generated Amtala map placement, per-EV battery cards,
 eight explanatory comparison charts and a full-horizon three-policy lab.
+
+**Custom vehicles and stations:** open **Customize fleet & stations** below
+the simulation controls. Add EV specifies ID, starting bus, usable capacity,
+SOC, owner reserve, output limit, travel consumption, onward reserve, departure,
+maximum travel distance, connector, consent and bidirectional capability.
+Add EVCS specifies ID, connection bus, physical/external occupied ports,
+per-port/site power limits, connectors and online/bidirectional flags.
+Both lists support edit/remove. Duplicate IDs, invalid ranges and impossible
+occupied-port counts are rejected; server-side scenario validation and
+electrical eligibility still determine admission. A vehicle can be added to
+the scenario without being accepted for a support session.
+
+Use **Apply & start new run** to apply changes. A running experiment is an
+immutable input snapshot; adding/removing draft entries never changes its
+sessions or recorded results. Drafts are stored in browser local storage per
+scenario and survive page reloads; started experiments are stored in the server
+ledger. **Restore scenario defaults** clears that scenario's browser draft.
+The JSON editor and Policy Lab use the same edited inputs. Custom entries are
+not wall-clock MQTT registrations or physical device discovery. Run
+`python -B scripts/verify_custom_entities.py` against the isolated port-8082
+research app to verify addition, editing, removal, validation, draft restore,
+custom admission/discharge, current-run isolation and mobile forms.
+
 Play advances the actual persisted simulation clock in selected 1/5/15-minute
 steps; Pause stops future advances after any in-flight operation completes.
 Vehicle motion interpolates along the feeder surrogate between calculated

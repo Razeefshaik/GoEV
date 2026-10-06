@@ -219,7 +219,7 @@
     <a href="/v2g" style="color:white;padding:8px;border:1px solid #ffffff66;border-radius:6px">V2G research demo</a>
     <div>
         <h1>GoEV — Live EV ⇄ EVCS Routing</h1>
-        <div class="tagline">Amtala, South 24 Parganas — real network on a real map · live MQTT feed via STOMP</div>
+        <div class="tagline">Amtala anchor + generated bus positions · feeder-distance travel surrogate · live MQTT feed via STOMP</div>
     </div>
     <div id="connectionStatus" class="disconnected">Connecting…</div>
 </header>
@@ -343,6 +343,20 @@
 <script th:inline="none">
     const evRows = new Map();
     const evcsRows = new Map();
+    // Refresh authoritative state so expired telemetry cannot remain online indefinitely.
+    setInterval(async () => {
+        try {
+            const response = await fetch('/api/dashboard/snapshot');
+            if (!response.ok) return;
+            const snapshot = await response.json();
+            evRows.clear(); evcsRows.clear();
+            (snapshot.evs || []).forEach(ev => evRows.set(ev.evId, ev));
+            (snapshot.evcsStations || []).forEach(station => evcsRows.set(station.evcsId, station));
+            redrawTable('evTableBody', evRows, renderEvRow, 'evCount', 'EVs');
+            redrawTable('evcsTableBody', evcsRows, renderEvcsRow, 'evcsCount', 'stations');
+            redrawOverlays();
+        } catch (error) { console.warn('Dashboard snapshot unavailable', error); }
+    }, 10000);
     const assignments = [];
     let busCoords = new Map();   // busId -> {lat, lng}
     let busParents = new Map();  // busId -> parent busId (spanning tree)
