@@ -6,4 +6,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class ResearchPageController {
     @GetMapping("/v2g") public String page(){return "v2g";}
+    /** Beginner "how to use" guide; its images and PDF live in static/guide/. */
+    @GetMapping("/guide") public String guide(){return "guide";}
 }

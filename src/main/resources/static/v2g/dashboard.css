@@ -221,6 +221,11 @@ nav a.active {
 .ghost:hover {
   background: #f3f7f8;
 }
+a.ghost {
+  display: inline-block;
+  text-decoration: none;
+  white-space: nowrap;
+}
 .primary {
   background: #008e78;
   color: white;
@@ -1332,7 +1337,8 @@ footer {
   .top-actions {
     gap: 5px;
   }
-  .top-actions button {
+  .top-actions button,
+  .top-actions a.ghost {
     font-size: 9px;
     padding: 7px;
   }

@@ -4,6 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>GoEV | Neighbourhood supply support</title>
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#102c36" />
     <link rel="stylesheet" href="/v2g/vendor/leaflet.css" />
     <link rel="stylesheet" href="/v2g/dashboard.css" />
     <script src="/config.js"></script>
@@ -29,6 +33,7 @@
       <div class="side-bottom">
         <span class="live-dot"></span> SOFTWARE SIMULATION
         <p>ACSR Weasel · 28 buses<br />Grid-connected research</p>
+        <a href="/guide">How to use this dashboard →</a>
       </div>
     </aside>
     <div class="workspace">
@@ -38,7 +43,8 @@
           ><strong>Neighbourhood supply support</strong>
         </div>
         <div class="top-actions">
-          <button id="motion" class="ghost" aria-pressed="true">
+          <a class="ghost guide-link" href="/guide">? How to use</a
+          ><button id="motion" class="ghost" aria-pressed="true">
             Motion on</button
           ><button id="presentation" class="ghost" aria-pressed="false">
             Presentation view</button

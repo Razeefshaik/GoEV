@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>GoEV | How to use</title>
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#102c36" />
+    <meta
+      name="description"
+      content="Beginner guide: run a simple GoEV vehicle-to-grid simulation and read the results."
+    />
+    <style>
+      :root {
+        --ink: #142d38;
+        --muted: #5b707a;
+        --teal: #009c83;
+        --teal-dark: #008e78;
+        --line: #e3e9ec;
+        --bg: #f3f6f7;
+        --card: #ffffff;
+        --tint: #eef6f4;
+        --side: #12303b;
+        font-family:
+          Inter,
+          Segoe UI,
+          system-ui,
+          sans-serif;
+        color: var(--ink);
+        background: var(--bg);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 80px;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        line-height: 1.6;
+      }
+      a {
+        color: var(--teal-dark);
+      }
+      a:focus-visible,
+      button:focus-visible {
+        outline: 3px solid #009c8366;
+        outline-offset: 2px;
+      }
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px max(16px, calc((100% - 960px) / 2));
+        background: #fffffff2;
+        border-bottom: 1px solid var(--line);
+        backdrop-filter: blur(8px);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--ink);
+        text-decoration: none;
+        font-weight: 750;
+      }
+      .brand-icon {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        background: linear-gradient(135deg, #1fd0a9, #009c83);
+        color: var(--side);
+        font-size: 18px;
+      }
+      .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 650;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .btn-primary {
+        background: var(--teal-dark);
+        color: white;
+      }
+      .btn-primary:hover {
+        background: #007a67;
+      }
+      .btn-ghost {
+        background: white;
+        color: #35525e;
+        border: 1px solid #dbe4e7;
+      }
+      .btn-ghost:hover {
+        background: #f3f7f8;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 32px 16px 64px;
+      }
+      .eyebrow {
+        font-size: 11px;
+        font-weight: 750;
+        letter-spacing: 2px;
+        color: var(--teal);
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: clamp(30px, 5vw, 42px);
+        line-height: 1.1;
+        letter-spacing: -1px;
+        margin: 6px 0 10px;
+      }
+      .lead {
+        font-size: 17px;
+        color: var(--muted);
+        margin: 0 0 22px;
+        max-width: 640px;
+      }
+      .toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .toc a {
+        font-size: 13px;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: white;
+        border: 1px solid var(--line);
+        text-decoration: none;
+        color: var(--ink);
+      }
+      .toc a:hover {
+        border-color: var(--teal);
+      }
+      section {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 26px 28px;
+        margin-top: 22px;
+      }
+      h2 {
+        font-size: 22px;
+        letter-spacing: -0.4px;
+        margin: 0 0 12px;
+        color: var(--ink);
+      }
+      h3 {
+        font-size: 15px;
+        margin: 24px 0 8px;
+      }
+      p {
+        margin: 0 0 12px;
+      }
+      .note {
+        background: var(--tint);
+        border-left: 4px solid var(--teal);
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin: 14px 0 0;
+      }
+      .link-box {
+        display: inline-block;
+        font-weight: 700;
+        word-break: break-all;
+      }
+      figure {
+        margin: 14px 0 16px;
+      }
+      figure img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #f8fbfc;
+      }
+      figure.narrow img {
+        max-width: 560px;
+      }
+      ol.steps {
+        list-style: none;
+        counter-reset: step;
+        padding: 0;
+        margin: 16px 0 8px;
+      }
+      ol.steps li {
+        counter-increment: step;
+        position: relative;
+        padding: 6px 0 12px 50px;
+        min-height: 44px;
+      }
+      ol.steps li::before {
+        content: counter(step);
+        position: absolute;
+        left: 0;
+        top: 2px;
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        background: var(--teal);
+        color: white;
+        font-weight: 750;
+        display: grid;
+        place-items: center;
+      }
+      ul {
+        padding-left: 20px;
+        margin: 6px 0 12px;
+      }
+      li {
+        margin-bottom: 4px;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      th,
+      td {
+        text-align: left;
+        vertical-align: top;
+        padding: 8px 10px 8px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      th {
+        width: 34%;
+        font-weight: 650;
+      }
+      .glossary th {
+        width: 90px;
+      }
+      footer {
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 28px;
+      }
+      @media (max-width: 620px) {
+        .topbar .brand span:last-child {
+          display: none;
+        }
+        section {
+          padding: 20px 16px;
+        }
+        th,
+        td {
+          display: block;
+          width: auto;
+          padding: 0;
+          border: 0;
+        }
+        th {
+          padding-top: 10px;
+        }
+        td {
+          padding-bottom: 10px;
+          border-bottom: 1px solid var(--line);
+        }
+      }
+      @media print {
+        .topbar,
+        .toc {
+          display: none;
+        }
+        section {
+          break-inside: avoid;
+          border: 0;
+          padding: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/"
+        ><span class="brand-icon" aria-hidden="true">↯</span
+        ><span>GoEV guide</span></a
+      >
+      <nav class="actions" aria-label="Guide actions">
+        <a
+          class="btn btn-ghost"
+          href="/guide/GoEV-Dashboard-Quick-Guide.pdf"
+          download
+          >↓ Download PDF</a
+        >
+        <a class="btn btn-primary" href="/">Open dashboard →</a>
+      </nav>
+    </header>
+
+    <main>
+      <div class="eyebrow">Quick guide</div>
+      <h1>How to use the GoEV dashboard</h1>
+      <p class="lead">
+        Run a simple simulation in four steps, then read what the results mean.
+        No technical background needed.
+      </p>
+      <div class="toc" aria-label="On this page">
+        <a href="#about">What is this?</a><a href="#run">Run a simulation</a
+        ><a href="#options">All options</a><a href="#results">Reading results</a
+        ><a href="#glossary">Glossary</a>
+      </div>
+
+      <section id="about">
+        <h2>What is this?</h2>
+        <p>
+          GoEV simulates a small electricity network (28 connection points,
+          called <b>buses</b>) that does not get enough power from the main
+          grid. Electric vehicles (EVs) drive to charging stations and send some
+          of their battery energy <b>back</b> into the network. This is called
+          <b>Vehicle-to-Grid (V2G)</b>. The dashboard shows how much this helps.
+        </p>
+        <h3>Opening the dashboard</h3>
+        <p>
+          Open the dashboard here:
+          <a class="link-box" href="/">goev-backend.onrender.com</a>
+        </p>
+        <p class="note">
+          The server is on free hosting and sleeps when nobody uses it. The
+          <b>first visit can take up to one minute</b>. Grey moving placeholders
+          and a loading message are shown while it wakes up. Please wait; there
+          is no need to refresh.
+        </p>
+      </section>
+
+      <section id="run">
+        <h2>Run a simple simulation (4 steps)</h2>
+        <figure>
+          <img
+            src="/guide/controls.webp"
+            width="1600"
+            height="226"
+            alt="Dashboard controls: Experiment, Assignment policy, Start new run, Time step, Play simulation, Step and Run to end"
+          />
+        </figure>
+        <ol class="steps">
+          <li>
+            Leave <b>Experiment</b> and <b>Assignment policy</b> as they are. The
+            defaults are a good first example.
+          </li>
+          <li>Click the green <b>Start new run</b> button.</li>
+          <li>
+            Click <b>Play simulation</b>. Time moves forward by itself and the
+            EVs start driving. Click it again to pause.
+          </li>
+          <li>
+            Scroll down to watch the results update. To jump straight to the
+            final result, click <b>Run to end</b>.
+          </li>
+        </ol>
+        <p class="muted">
+          To start over at any time, click <b>Start new run</b> again.
+        </p>
+      </section>
+
+      <section id="options">
+        <h2>Every option in one line</h2>
+        <h3>Experiment (ready-made situations to test)</h3>
+        <table>
+          <tr>
+            <th>moderate shortage</th>
+            <td>Default. The grid gives too little power, so EV help is useful.</td>
+          </tr>
+          <tr>
+            <th>no shortage</th>
+            <td>The grid has plenty of power. EVs are not really needed.</td>
+          </tr>
+          <tr>
+            <th>weak voltage</th>
+            <td>A weaker, lower-voltage network where voltage becomes the main problem.</td>
+          </tr>
+          <tr>
+            <th>multiple stations</th>
+            <td>EVs are spread over several charging stations.</td>
+          </tr>
+          <tr>
+            <th>energy depletion</th>
+            <td>EVs have small batteries, so their help runs out quickly.</td>
+          </tr>
+          <tr>
+            <th>unwilling</th>
+            <td>EV owners do not agree to share energy, so EVs give no help.</td>
+          </tr>
+          <tr>
+            <th>incompatible</th>
+            <td>Station plugs do not match the EVs, so EVs cannot connect.</td>
+          </tr>
+          <tr>
+            <th>site bottleneck</th>
+            <td>Stations can pass only a little power, which limits EV help.</td>
+          </tr>
+          <tr>
+            <th>travel reserve</th>
+            <td>EV batteries are almost at their safe minimum, so there is little to give.</td>
+          </tr>
+          <tr>
+            <th>departure</th>
+            <td>EVs must leave early, so they help only for a short time.</td>
+          </tr>
+          <tr>
+            <th>stale telemetry</th>
+            <td>Station status data is out of date, so stations are not trusted.</td>
+          </tr>
+          <tr>
+            <th>excess injection</th>
+            <td>EVs could push too much power; shows the system stopping unsafe overload.</td>
+          </tr>
+          <tr>
+            <th>insufficient support</th>
+            <td>Demand is much higher; EVs help but cannot close the whole gap.</td>
+          </tr>
+        </table>
+
+        <h3>Assignment policy (how EVs are sent to stations)</h3>
+        <table>
+          <tr>
+            <th>Coordinated heuristic</th>
+            <td>Default. Sends each EV to the station where it helps the network most.</td>
+          </tr>
+          <tr>
+            <th>Nearest eligible</th>
+            <td>Sends each EV to the closest suitable station.</td>
+          </tr>
+          <tr>
+            <th>Without V2G</th>
+            <td>EVs give no energy. Useful to see the network on its own.</td>
+          </tr>
+        </table>
+
+        <h3>Buttons and settings</h3>
+        <table>
+          <tr>
+            <th>Start new run</th>
+            <td>Starts a fresh simulation with the chosen experiment and policy.</td>
+          </tr>
+          <tr>
+            <th>Time step</th>
+            <td>How much simulated time passes per step: 1, 5 or 15 minutes.</td>
+          </tr>
+          <tr>
+            <th>Play simulation</th>
+            <td>Moves time forward automatically. Click again to pause.</td>
+          </tr>
+          <tr>
+            <th>Step →</th>
+            <td>Moves forward by exactly one time step.</td>
+          </tr>
+          <tr>
+            <th>Run to end</th>
+            <td>Jumps straight to the end of the simulation.</td>
+          </tr>
+          <tr>
+            <th>Keep simulated stations online</th>
+            <td>Leave ticked. Unticking pretends stations went silent, which stops EV help.</td>
+          </tr>
+          <tr>
+            <th>Export run</th>
+            <td>Downloads the results of the current run as a file.</td>
+          </tr>
+          <tr>
+            <th>Customize fleet &amp; stations</th>
+            <td>Add or edit your own EVs and stations, then start a new run with them.</td>
+          </tr>
+          <tr>
+            <th>Motion on / off</th>
+            <td>Turns the moving-vehicle animation on or off.</td>
+          </tr>
+          <tr>
+            <th>Presentation view</th>
+            <td>Hides the side menu and keeps the controls at the top. Good for a projector.</td>
+          </tr>
+          <tr>
+            <th>Electrical view / Geographic map</th>
+            <td>Shows the network as a diagram or on a real map.</td>
+          </tr>
+          <tr>
+            <th>Colour buses by</th>
+            <td>Colours the buses by voltage, unserved demand or EV support.</td>
+          </tr>
+          <tr>
+            <th>Fit network</th>
+            <td>Re-centres the network picture.</td>
+          </tr>
+          <tr>
+            <th>Compare all 3 policies</th>
+            <td>(Further down the page) runs all three policies on the same situation side by side.</td>
+          </tr>
+        </table>
+      </section>
+
+      <section id="results">
+        <h2>Reading the results</h2>
+        <h3>1. Summary cards (top of the page)</h3>
+        <figure>
+          <img
+            src="/guide/cards.webp"
+            width="1600"
+            height="165"
+            loading="lazy"
+            alt="Summary cards: Demand supplied, Supply gap, Main grid, EV contribution, Feeder losses, Lowest voltage"
+          />
+        </figure>
+        <ul>
+          <li><b>Demand supplied</b>: power actually reaching homes. Higher is better.</li>
+          <li><b>Supply gap</b>: power homes wanted but did not get. Lower is better.</li>
+          <li><b>EV contribution</b>: power the parked EVs are giving to the network.</li>
+          <li>
+            <b>Lowest voltage</b>: must stay above the allowed minimum (0.95) for
+            the network to be safe.
+          </li>
+        </ul>
+
+        <h3>2. Network picture ("Your neighbourhood, connected")</h3>
+        <figure>
+          <img
+            src="/guide/network.webp"
+            width="1600"
+            height="970"
+            loading="lazy"
+            alt="Network diagram with numbered buses, orange charging stations and small EV icons"
+          />
+        </figure>
+        <ul>
+          <li>Each <b>circle</b> is a bus. <b>Bus 1</b> (left) is where power comes from the main grid.</li>
+          <li>
+            <b>Orange icons</b> (V2G-1, V2G-2, ...) are charging stations. The
+            <b>small cars</b> are EVs.
+          </li>
+          <li><b>Click anything</b> to see its details on the right.</li>
+        </ul>
+
+        <h3>3. EV fleet ("Every EV has a journey")</h3>
+        <figure>
+          <img
+            src="/guide/fleet.webp"
+            width="1600"
+            height="459"
+            loading="lazy"
+            alt="Four EV cards showing battery charge, power supplied and remaining budget"
+          />
+        </figure>
+        <ul>
+          <li><b>Battery charge (SOC)</b>: how full the battery is.</li>
+          <li>
+            Each EV keeps a <b>20% owner reserve</b>, so it always has enough
+            charge to continue its trip.
+          </li>
+          <li><b>Supplying now</b>: how much power this EV is giving to the network.</li>
+        </ul>
+
+        <h3>4. The main result ("See the difference EVs make")</h3>
+        <figure class="narrow">
+          <img
+            src="/guide/chart-energy.webp"
+            width="843"
+            height="555"
+            loading="lazy"
+            alt="Bar chart comparing energy supplied without EVs (grey) and with the selected policy (green)"
+          />
+        </figure>
+        <ul>
+          <li>
+            <b>Grey bar</b> = the same network <b>without</b> EV help.
+            <b>Green bar</b> = <b>with</b> EV help.
+          </li>
+          <li>A <b>longer green bar</b> means EVs helped supply more energy to homes.</li>
+          <li>The other charts below it show more detail. Hover over a point to see its value.</li>
+        </ul>
+      </section>
+
+      <section id="glossary">
+        <h2>Small glossary</h2>
+        <table class="glossary">
+          <tr><th>kW</th><td>Power at this moment (like speed).</td></tr>
+          <tr><th>kWh</th><td>Energy over time (like distance travelled).</td></tr>
+          <tr><th>SOC</th><td>State of charge: battery level in %.</td></tr>
+          <tr><th>pu</th><td>Voltage compared with normal. 1.00 = normal, below 0.95 = too low.</td></tr>
+          <tr><th>V2G</th><td>Vehicle-to-Grid: an EV sending battery energy back to the network.</td></tr>
+        </table>
+        <p class="muted" style="margin-top: 14px">
+          This is a software simulation. Vehicle routes and map positions are
+          generated for demonstration and are not real roads.
+        </p>
+      </section>
+
+      <footer>
+        <a class="btn btn-primary" href="/">Open the dashboard →</a>
+      </footer>
+    </main>
+  </body>
+</html>

@@ -38,6 +38,17 @@ class DashboardControllerTest {
     }
 
     @Test
+    void guidePageAndPdfAreServed() {
+        ResponseEntity<String> page = restTemplate.getForEntity("/guide", String.class);
+        assertThat(page.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(page.getBody()).contains("How to use the GoEV dashboard");
+
+        ResponseEntity<byte[]> pdf = restTemplate.getForEntity("/guide/GoEV-Dashboard-Quick-Guide.pdf", byte[].class);
+        assertThat(pdf.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(pdf.getBody()).isNotEmpty();
+    }
+
+    @Test
     void snapshotReflectsBroadcastedEvcsStatus() {
         broadcaster.onEvcsStatus(new EvcsStatusMessage(
                 "EVCS-DASH-01", 3, List.of("ccs"), 2, 0, 50.0, 0.0));

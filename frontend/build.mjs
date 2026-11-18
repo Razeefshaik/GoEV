@@ -6,6 +6,7 @@
 // Output: frontend/dist/
 //   index.html  <- templates/v2g.html   (served at /)
 //   v2g.html    <- templates/v2g.html   (served at /v2g via netlify.toml)
+//   guide.html  <- templates/guide.html (served at /guide via netlify.toml)
 //   config.js   <- generated with the backend URL
 //   v2g/**      <- static/v2g/**
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -38,7 +39,7 @@ cpSync(join(resources, "static"), dist, { recursive: true });
 const stripThymeleaf = (html) =>
   html.replace(/\s+xmlns:th="[^"]*"/g, "").replace(/\s+th:inline="[^"]*"/g, "");
 
-for (const [template, out] of [["v2g.html", "index.html"], ["v2g.html", "v2g.html"]]) {
+for (const [template, out] of [["v2g.html", "index.html"], ["v2g.html", "v2g.html"], ["guide.html", "guide.html"]]) {
   const html = readFileSync(join(resources, "templates", template), "utf8");
   writeFileSync(join(dist, out), stripThymeleaf(html));
 }

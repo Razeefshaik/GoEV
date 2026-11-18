@@ -16,6 +16,12 @@
   status = 200
   force = true
 
+[[redirects]]
+  from = "/guide"
+  to = "/guide.html"
+  status = 200
+  force = true
+
 # config.js holds the backend URL; never let browsers cache a stale one.
 [[headers]]
   for = "/config.js"
