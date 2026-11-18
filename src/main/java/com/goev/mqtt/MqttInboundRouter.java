@@ -35,6 +35,9 @@ public class MqttInboundRouter {
     private final List<EvStatusHandler> evStatusHandlers;
     private final List<ChargeRequestHandler> chargeRequestHandlers;
     private final List<EvcsStatusHandler> evcsStatusHandlers;
+    private List<ChargingAckHandler> chargingAckHandlers=List.of();
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setChargingAckHandlers(List<ChargingAckHandler> handlers){this.chargingAckHandlers=handlers;}
 
     public MqttInboundRouter(ObjectMapper objectMapper,
                               List<EvStatusHandler> evStatusHandlers,
@@ -58,11 +61,21 @@ public class MqttInboundRouter {
         String payload = message.getPayload();
 
         if ("ev".equals(category) && "status".equals(suffix)) {
-            dispatchEvStatus(objectMapper.readValue(payload, EvStatusMessage.class));
+            var status=objectMapper.readValue(payload, EvStatusMessage.class);
+            if(!segments[1].equals(status.evId()))throw new IllegalArgumentException("topic identity mismatch");
+            dispatchEvStatus(status);
         } else if ("ev".equals(category) && "request".equals(suffix)) {
-            dispatchChargeRequest(objectMapper.readValue(payload, ChargeRequestMessage.class));
+            var request=objectMapper.readValue(payload, ChargeRequestMessage.class);
+            if(!segments[1].equals(request.evId()))throw new IllegalArgumentException("topic identity mismatch");
+            dispatchChargeRequest(request);
         } else if ("evcs".equals(category) && "status".equals(suffix)) {
-            dispatchEvcsStatus(objectMapper.readValue(payload, EvcsStatusMessage.class));
+            var status=objectMapper.readValue(payload, EvcsStatusMessage.class);
+            if(!segments[1].equals(status.evcsId()))throw new IllegalArgumentException("topic identity mismatch");
+            dispatchEvcsStatus(status);
+        } else if("evcs".equals(category) && "ack".equals(suffix)) {
+            var ack=objectMapper.readValue(payload,ChargingAckMessage.class);
+            if(!segments[1].equals(ack.evcsId()))throw new IllegalArgumentException("ACK topic identity mismatch");
+            dispatch(chargingAckHandlers,h->h.onAck(ack));
         } else {
             throw new IllegalArgumentException("Unrecognized MQTT topic: " + topic);
         }

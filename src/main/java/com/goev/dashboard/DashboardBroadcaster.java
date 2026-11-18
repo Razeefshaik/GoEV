@@ -37,6 +37,12 @@ public class DashboardBroadcaster implements EvStatusHandler, EvcsStatusHandler,
     private final SimpMessagingTemplate messagingTemplate;
     private final Map<String, EvStatusMessage> latestEvStatus = new ConcurrentHashMap<>();
     private final Map<String, EvcsStatusMessage> latestEvcsStatus = new ConcurrentHashMap<>();
+    private final Map<String,Instant> stationHeartbeat=new ConcurrentHashMap<>();
+    private com.goev.state.StateService stateService;
+    @org.springframework.beans.factory.annotation.Value("${goev.state.ev-ttl-seconds:90}") private long evTtl=90;
+    @org.springframework.beans.factory.annotation.Value("${goev.state.evcs-ttl-seconds:90}") private long stationTtl=90;
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setStateService(com.goev.state.StateService stateService){this.stateService=stateService;}
     private final Deque<AssignmentNotification> recentAssignments = new ArrayDeque<>(MAX_RECENT_ASSIGNMENTS);
 
     public DashboardBroadcaster(SimpMessagingTemplate messagingTemplate) {
@@ -51,6 +57,7 @@ public class DashboardBroadcaster implements EvStatusHandler, EvcsStatusHandler,
 
     @Override
     public void onEvcsStatus(EvcsStatusMessage message) {
+        stationHeartbeat.put(message.evcsId(),Instant.now());
         latestEvcsStatus.put(message.evcsId(), message);
         messagingTemplate.convertAndSend("/topic/evcs-status", message);
     }
@@ -65,7 +72,8 @@ public class DashboardBroadcaster implements EvStatusHandler, EvcsStatusHandler,
      */
     @EventListener
     public void onEvcsLiveStateChanged(EvcsLiveStateChangedEvent event) {
-        onEvcsStatus(event.message());
+        latestEvcsStatus.put(event.message().evcsId(),event.message());
+        messagingTemplate.convertAndSend("/topic/evcs-status",event.message());
     }
 
     @Override
@@ -81,11 +89,19 @@ public class DashboardBroadcaster implements EvStatusHandler, EvcsStatusHandler,
     }
 
     public Collection<EvStatusMessage> evSnapshot() {
-        return List.copyOf(latestEvStatus.values());
+        return latestEvStatus.values().stream().filter(e->e.timestamp()!=null && e.timestamp().isAfter(Instant.now().minusSeconds(evTtl))).toList();
     }
 
     public Collection<EvcsStatusMessage> evcsSnapshot() {
-        return List.copyOf(latestEvcsStatus.values());
+        return latestEvcsStatus.values().stream().filter(e->stationHeartbeat.getOrDefault(e.evcsId(),Instant.EPOCH).isAfter(Instant.now().minusSeconds(stationTtl)))
+            .map(this::stationSnapshot).toList();
+    }
+    private EvcsStatusMessage stationSnapshot(EvcsStatusMessage e) {
+        if(stateService==null)return e;
+        try{return stateService.getEvcsState(e.evcsId()).map(s->new EvcsStatusMessage(e.evcsId(),s.getBusId(),s.getConnectorTypes(),
+            s.getAvailableSlots(),s.getQueueLength(),s.getChargeRateKw(),s.getCurrentLoadKw(),e.totalSlots(),s.getCommittedReservationIds()))
+            .orElseGet(()->new EvcsStatusMessage(e.evcsId(),e.busId(),e.connectorTypes(),0,0,e.chargeRateKw(),null,e.totalSlots(),List.of()));}
+        catch(RuntimeException unavailable){return new EvcsStatusMessage(e.evcsId(),e.busId(),e.connectorTypes(),0,0,e.chargeRateKw(),null,e.totalSlots(),List.of());}
     }
 
     public synchronized List<AssignmentNotification> recentAssignmentsSnapshot() {

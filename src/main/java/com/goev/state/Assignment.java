@@ -16,6 +16,14 @@ public class Assignment {
 
     private UUID requestId;
     private String evcsId;
+    private String evId;
+    private double distanceKm;
+    private int etaMin;
+    private double plannedChargeKw;
+    private Instant arrivalAt;
+    private String reasonCode;
+    private boolean commandPending;
+    private String pendingCommandType;
     private Instant reservedAt;
     private Instant expiresAt;
 
@@ -59,4 +67,19 @@ public class Assignment {
     public AssignmentStatus getStatus() {
         return status;
     }
+    public String getEvId(){return evId;}
+    public double getDistanceKm(){return distanceKm;}
+    public int getEtaMin(){return etaMin;}
+    public double getPlannedChargeKw(){return plannedChargeKw;}
+    public Instant getArrivalAt(){return arrivalAt;}
+    public String getReasonCode(){return reasonCode;}
+    public boolean isCommandPending(){return commandPending;}
+    public void sent(){commandPending=false;}
+    public void complete(){status=AssignmentStatus.COMPLETED;if(evId!=null){commandPending=true;pendingCommandType="RELEASE";}}
+    public void confirm(){status=AssignmentStatus.CONFIRMED;}
+    public void planned(String evId,double distanceKm,int etaMin,double kw,Instant arrivalAt,String reasonCode){
+        this.evId=evId;this.distanceKm=distanceKm;this.etaMin=etaMin;this.plannedChargeKw=kw;
+        this.arrivalAt=arrivalAt;this.reasonCode=reasonCode;this.commandPending=true;this.pendingCommandType="RESERVE";
+    }
+    public String getPendingCommandType(){return pendingCommandType;}
 }

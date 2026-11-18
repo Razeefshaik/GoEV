@@ -1,5 +1,38 @@
 # GoEV — EV to EVCS routing system
 
+## V2G neighbourhood support extension
+
+Use **ACSR Weasel** for the new research model (0.9291 ohm/km at 20 C).
+The versioned dataset preserves original electrical inputs and changes only
+inferred lengths; legacy seed/database data are preserved.
+
+Run `gradlew.bat researchRun` and open **http://localhost:8081/v2g** for a
+standalone grid-connected simulation with an explicit source cap, radial
+power flow, battery budgets, durable sessions, editable scenarios and baseline
+comparisons. The ordinary app exposes the same page at `/v2g`.
+
+The presentation dashboard includes animated EV journeys and discharge,
+clickable buses/branches/stations, a generated Amtala map, battery cards,
+eight explanatory charts, play/pause, and a full-horizon three-policy lab.
+Use **Presentation view** during a demonstration. Map tiles require internet;
+the local schematic and charts do not. Bus locations and travel paths are
+explicitly generated surrogates. Frontend browser verification is recorded
+under `output/v2g/frontend/` and reproduced by `scripts/verify_dashboard.py`
+against an isolated research server on port 8082.
+
+Run `gradlew.bat test`, `gradlew.bat v2gBenchmark`, and
+`python scripts/validate_v2g.py` (NumPy/SciPy) to reproduce validation and
+machine-readable results under `output/v2g`. Run
+`python -m unittest discover -s dev-clients -p test_v2g_station.py` for the
+device-state simulation check.
+
+See [V2G research documentation](docs/v2g-research.md) for the complete domain
+model, equations, assumptions, lifecycle, API/MQTT examples and setup. It also
+records shared charging correctness changes and supersedes conflicting
+historical claims below. Neither islanded backup nor physical V2G hardware
+validation is implemented. Full-load network violations and unserved demand
+are reported explicitly.
+
 See [docs/ev-evcs-architecture-design.md](docs/ev-evcs-architecture-design.md)
 for the full architecture, data model, MQTT topics, and algorithm design.
 This repo is built phase by phase per that doc's section 9; each phase gets

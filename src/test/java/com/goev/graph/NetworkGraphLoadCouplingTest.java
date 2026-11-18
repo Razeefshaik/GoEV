@@ -93,11 +93,11 @@ class NetworkGraphLoadCouplingTest {
                 assertThat(headroom).isCloseTo(0.28 - 0.5, offset(0.0001)));
 
         assertThat(graphService.headroomMva(9)).hasValueSatisfying(headroom ->
-                assertThat(headroom).isCloseTo(0.38 - 0.5, offset(0.0001)));
+                assertThat(headroom).isCloseTo(0.36 - 0.5, offset(0.0001)));
 
         // Bus 12 (fed via 4 -> 11 -> 12, a completely different branch) must be unaffected.
         // Line 11 (bus 11 -> 12): max 0.4 MVA, peak 0.050 MVA -> static headroom 0.35 MVA.
         assertThat(graphService.headroomMva(12)).hasValueSatisfying(headroom ->
-                assertThat(headroom).isCloseTo(0.35, offset(0.0001)));
+                assertThat(headroom).isCloseTo(0.23, offset(0.0001)));
     }
 }

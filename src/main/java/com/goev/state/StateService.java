@@ -34,6 +34,7 @@ import com.goev.mqtt.Location;
  * carries are set; the rest stay null until something enriches them later.
  */
 @Service
+@org.springframework.core.annotation.Order(-100)
 public class StateService implements EvStatusHandler, EvcsStatusHandler, ChargeRequestHandler {
 
     private final EvLiveStateRepository evLiveStateRepository;
@@ -44,6 +45,9 @@ public class StateService implements EvStatusHandler, EvcsStatusHandler, ChargeR
     private final StateProperties properties;
     private final TaskScheduler taskScheduler;
     private final ApplicationEventPublisher eventPublisher;
+    private AssignmentRepository assignments;
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setAssignments(AssignmentRepository assignments){this.assignments=assignments;}
 
     public StateService(EvLiveStateRepository evLiveStateRepository,
                          EvcsLiveStateRepository evcsLiveStateRepository,
@@ -87,6 +91,7 @@ public class StateService implements EvStatusHandler, EvcsStatusHandler, ChargeR
                 message.currentLoadKw(),
                 Instant.now(),
                 properties.getEvcsTtlSeconds());
+        state.setCommittedReservationIds(message.committedReservationIds());
         evcsLiveStateRepository.save(state);
     }
 
@@ -95,8 +100,22 @@ public class StateService implements EvStatusHandler, EvcsStatusHandler, ChargeR
     }
 
     public Optional<EvcsLiveState> getEvcsState(String evcsId) {
-        return evcsLiveStateRepository.findById(evcsId);
+        return evcsLiveStateRepository.findById(evcsId).map(reported->{
+            if(assignments==null)return reported;
+            Integer total=evcsRepository.findById(evcsId).map(Evcs::getTotalSlots).orElse(null);
+            if(total==null)return reported;
+            var committed=assignments.findByEvcsId(evcsId).stream()
+                .filter(a->com.goev.routing.ChargingAdmission.active(a,Instant.now())).toList();
+            long own=reported.getCommittedReservationIds()==null?0:committed.stream()
+                .filter(a->reported.getCommittedReservationIds().contains(a.getAssignmentId().toString())).count();
+            long external=Math.max(0,total-(reported.getAvailableSlots()==null?0:reported.getAvailableSlots())-own);
+            int free=(int)Math.max(0,total-committed.size()-external);
+            EvcsLiveState derived=new EvcsLiveState(evcsId,reported.getBusId(),reported.getConnectorTypes(),free,reported.getQueueLength(),
+                reported.getChargeRateKw(),reported.getCurrentLoadKw(),reported.getLastHeartbeatAt(),reported.getTtlSeconds());
+            derived.setCommittedReservationIds(reported.getCommittedReservationIds());return derived;
+        });
     }
+    public Optional<EvcsLiveState> getReportedEvcsState(String id){return evcsLiveStateRepository.findById(id);}
 
     /**
      * Marks one slot at this EVCS occupied right away (so a second request in the
@@ -126,7 +145,7 @@ public class StateService implements EvStatusHandler, EvcsStatusHandler, ChargeR
             EvcsLiveState updated = new EvcsLiveState(
                     evcsId, state.getBusId(), state.getConnectorTypes(), updatedSlots,
                     state.getQueueLength(), state.getChargeRateKw(), state.getCurrentLoadKw(),
-                    Instant.now(), state.getTtlSeconds());
+                    state.getLastHeartbeatAt(), state.getTtlSeconds());
             evcsLiveStateRepository.save(updated);
 
             eventPublisher.publishEvent(new EvcsLiveStateChangedEvent(new EvcsStatusMessage(
@@ -151,10 +170,13 @@ public class StateService implements EvStatusHandler, EvcsStatusHandler, ChargeR
 
     private void ensureEvcsRegistered(EvcsStatusMessage message) {
         if (evcsRepository.existsById(message.evcsId())) {
+            if(message.totalSlots()!=null && message.totalSlots()>0) evcsRepository.findById(message.evcsId()).ifPresent(e->{
+                if(e.getTotalSlots()==null){e.setTotalSlots(message.totalSlots());evcsRepository.save(e);}
+            });
             return;
         }
         String connectorTypes = message.connectorTypes() == null ? "" : String.join(",", message.connectorTypes());
-        evcsRepository.save(new Evcs(message.evcsId(), message.busId(), message.availableSlots(),
+        evcsRepository.save(new Evcs(message.evcsId(), message.busId(), message.totalSlots(),
                 message.chargeRateKw(), connectorTypes, null, message.currentLoadKw()));
     }
 

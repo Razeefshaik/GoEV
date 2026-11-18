@@ -78,3 +78,11 @@ See [raspberry-pi/README.md](raspberry-pi/README.md) — flashing the SD
 card, headless setup, and deploying `ev_client.py` (unmodified) so a real
 Pi Zero 2 W acts as an actual EV on the network instead of a PC-run
 simulator.
+# V2G and persistent charging simulation
+
+`v2g_station.py` simulates versioned V2G command state, capacity, SOC/energy and
+ACKs with durable SQLite command deduplication. See
+[the V2G workflow](../docs/v2g-research.md#optional-mqtt-demonstration).
+`evcs_client.py` now also simulates persistent reservation/release commands,
+changing available ports, explicit `--total-slots` and ACKs. It no longer only
+prints commands. These are software/communications simulations.

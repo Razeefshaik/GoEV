@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>GoEV | Neighbourhood supply support</title>
+    <link rel="stylesheet" href="/v2g/vendor/leaflet.css" />
+    <link rel="stylesheet" href="/v2g/dashboard.css" />
+    <script defer src="/v2g/vendor/leaflet.js"></script>
+    <script defer src="/v2g/dashboard.js"></script>
+    <script defer src="/v2g/customizer.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to dashboard</a>
+    <aside class="sidebar">
+      <a class="brand" href="/v2g"
+        ><span class="brand-icon">↯</span
+        ><span>GoEV<span class="brand-sub">ENERGY LAB</span></span></a
+      >
+      <div class="nav-caption">RESEARCH WORKSPACE</div>
+      <nav aria-label="Dashboard sections">
+        <a href="#overview" class="active">◉ <span>Overview</span></a
+        ><a href="#network">⌘ <span>Network explorer</span></a
+        ><a href="#fleet">▰ <span>EV fleet</span></a
+        ><a href="#comparison">▥ <span>Compare outcomes</span></a
+        ><a href="#details">≡ <span>Engineering data</span></a>
+      </nav>
+      <div class="side-bottom">
+        <span class="live-dot"></span> SOFTWARE SIMULATION
+        <p>ACSR Weasel · 28 buses<br />Grid-connected research</p>
+        <a href="/">Original charging dashboard ↗</a>
+      </div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <div>
+          <span class="breadcrumb">GoEV / Research</span
+          ><strong>Neighbourhood supply support</strong>
+        </div>
+        <div class="top-actions">
+          <button id="motion" class="ghost" aria-pressed="true">
+            Motion on</button
+          ><button id="presentation" class="ghost" aria-pressed="false">
+            Presentation view</button
+          ><span class="pill">SIMULATED</span>
+        </div>
+      </header>
+      <main id="main">
+        <section class="intro" id="overview">
+          <div>
+            <p class="eyebrow">VEHICLE-TO-GRID EXPLORER</p>
+            <h1>
+              Small batteries.<br /><span>A stronger neighbourhood.</span>
+            </h1>
+            <p>
+              Watch EVs become local energy sources. Explore what they can
+              supply, what the grid can safely carry, and what demand remains
+              unmet.
+            </p>
+          </div>
+          <div class="intro-mark" aria-hidden="true">
+            <span>↯</span>
+            <div class="orbit one"></div>
+            <div class="orbit two"></div>
+            <i></i><i></i><i></i>
+          </div>
+        </section>
+        <section class="control-panel panel" aria-label="Simulation controls">
+          <div class="control-grid">
+            <label>EXPERIMENT<select id="scenario"></select></label
+            ><label
+              >ASSIGNMENT POLICY<select id="policy">
+                <option value="coordinated">Coordinated heuristic</option>
+                <option value="nearest">Nearest eligible</option>
+                <option value="none">Without V2G</option>
+              </select></label
+            ><button id="start" class="primary">↻ Start new run</button>
+            <div class="control-divider"></div>
+            <label
+              >TIME STEP<select id="hours">
+                <option value="0.0166666667">1 simulated minute</option>
+                <option value="0.0833333333" selected>
+                  5 simulated minutes
+                </option>
+                <option value="0.25">15 simulated minutes</option>
+              </select></label
+            ><button id="play" class="primary" disabled>
+              ▶ Play simulation</button
+            ><button id="advance" class="ghost" disabled>Step →</button
+            ><button id="finish" class="ghost" disabled>Run to end ↗</button>
+          </div>
+          <div class="control-foot">
+            <label
+              ><input id="heartbeat" type="checkbox" checked /> Keep simulated
+              stations online</label
+            ><span id="activity" role="status"
+              >Choose a scenario and start exploring.</span
+            ><button id="export" class="text-button" disabled>
+              Export run ↓
+            </button>
+          </div>
+          <p id="error" role="alert" hidden></p>
+        </section>
+        <section class="panel custom-builder" id="customBuilder">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">BUILD YOUR OWN EXPERIMENT</p>
+              <h2>Add your EVs and stations.</h2>
+              <p>
+                Choose an electrical bus, set the battery or equipment limits,
+                then start a new run.
+              </p>
+            </div>
+            <button
+              id="builderToggle"
+              class="ghost"
+              aria-expanded="false"
+              aria-controls="builderBody"
+            >
+              Customize fleet &amp; stations
+            </button>
+          </div>
+          <div id="builderBody" hidden>
+            <p class="draft-note" id="draftStatus" role="status">
+              Changes configure the next experiment. The running experiment
+              stays as it is.
+            </p>
+            <div class="builder-columns">
+              <div>
+                <div class="builder-heading">
+                  <h3>Electric vehicles <span id="draftEvCount"></span></h3>
+                  <button id="addEv" class="primary small">+ Add EV</button>
+                </div>
+                <div id="draftEvs" class="draft-list"></div>
+              </div>
+              <div>
+                <div class="builder-heading">
+                  <h3>
+                    Bidirectional stations <span id="draftStationCount"></span>
+                  </h3>
+                  <button id="addStation" class="primary small">
+                    + Add EVCS
+                  </button>
+                </div>
+                <div id="draftStations" class="draft-list"></div>
+              </div>
+            </div>
+            <div class="builder-actions">
+              <button id="applyDraft" class="primary">
+                Apply &amp; start new run</button
+              ><button id="resetDraft" class="ghost">
+                Restore scenario defaults</button
+              ><span class="muted"
+                >Drafts are saved in this browser. Started runs are saved by the
+                server.</span
+              >
+            </div>
+          </div>
+        </section>
+        <div class="run-strip">
+          <div>
+            <span class="live-dot"></span
+            ><strong id="clock">Ready for your first experiment</strong
+            ><span id="policyName"></span>
+          </div>
+          <span id="clockMinutes">0 min elapsed</span>
+        </div>
+        <div class="time-track"><div id="timeProgress"></div></div>
+        <div class="cards" id="cards"></div>
+        <section class="story-banner" aria-live="polite">
+          <div class="story-icon">↗</div>
+          <div>
+            <strong id="storyTitle">How much difference can an EV make?</strong>
+            <p id="storyText">
+              Start a run. The dashboard will compare the same neighbourhood
+              with and without EV support.
+            </p>
+          </div>
+          <span id="benefit" class="benefit">—</span>
+        </section>
+        <section class="panel network-panel" id="network">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">FOLLOW THE ENERGY</p>
+              <h2>Your neighbourhood, connected.</h2>
+              <p>
+                Click a bus, branch, station or vehicle to inspect its role.
+              </p>
+            </div>
+            <div class="segmented" aria-label="Network view">
+              <button id="schematicTab" class="selected" aria-pressed="true">
+                Electrical view</button
+              ><button id="mapTab" aria-pressed="false">Geographic map</button>
+            </div>
+          </div>
+          <div class="network-toolbar">
+            <div class="legend">
+              <span><i class="dot teal"></i>Supplying power</span
+              ><span><i class="dot blue"></i>Travelling</span
+              ><span><i class="dot amber"></i>Station</span
+              ><span><i class="dot red"></i>Outside limits</span>
+            </div>
+            <div>
+              <label class="compact-label"
+                >Colour buses by
+                <select id="networkMetric">
+                  <option value="voltage">Voltage</option>
+                  <option value="unserved">Unserved demand</option>
+                  <option value="injection">EV support</option>
+                </select></label
+              ><button id="fit" class="ghost small">Fit network</button>
+            </div>
+          </div>
+          <div class="network-grid">
+            <div class="network-stage">
+              <div id="schematicWrap">
+                <svg
+                  id="topology"
+                  viewBox="0 0 1120 480"
+                  role="img"
+                  aria-label="Interactive electrical network and travelling vehicles"
+                ></svg>
+              </div>
+              <div
+                id="map"
+                hidden
+                aria-label="Generated feeder placement near Amtala"
+              ></div>
+              <div class="stage-label" id="stageLabel">
+                ELECTRICAL TOPOLOGY · LIVE SIMULATED STATE
+              </div>
+              <div class="stage-hint" id="mapStatus">
+                Vehicle motion interpolates calculated time steps. Arrows show
+                real-power direction.
+              </div>
+            </div>
+            <aside id="inspector" class="inspector" aria-live="polite">
+              <span class="eyebrow">NETWORK INSPECTOR</span>
+              <h3>Select a bus</h3>
+              <p>
+                Explore voltage, demand and EV support at each electrical node.
+              </p>
+              <div class="inspector-art">⌘</div>
+              <p class="muted">
+                Bus 1 is the main source. EV stations add power at their
+                connected buses.
+              </p>
+            </aside>
+          </div>
+          <div class="network-bottom">
+            <span id="networkSummary"
+              >28 buses · 27 feeder branches · 3 bidirectional stations</span
+            ><span
+              >Locations and travel routes are generated surrogates, not
+              surveyed roads.</span
+            >
+          </div>
+        </section>
+        <section id="fleet">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">THE ENERGY TEAM</p>
+              <h2>Every EV has a journey.</h2>
+              <p>
+                Travel uses battery energy. Only an arrived, eligible vehicle
+                can discharge.
+              </p>
+            </div>
+            <span id="fleetCount" class="pill neutral">No active run</span>
+          </div>
+          <div id="fleetCards" class="fleet-grid"></div>
+          <details class="panel compact">
+            <summary>Detailed session budgets and timings</summary>
+            <p class="muted">
+              Initial support budgets are fixed at admission. Remaining grid
+              energy subtracts delivered energy. Final SOC is an estimate; it
+              can change with curtailment.
+            </p>
+            <div class="scroll"><table id="sessions"></table></div>
+          </details>
+        </section>
+        <section id="comparison">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">SAME NETWORK. SAME DEMAND.</p>
+              <h2>See the difference EVs make.</h2>
+              <p>
+                Grey is without EV support. Teal is your selected policy, under
+                the same limits.
+              </p>
+            </div>
+            <span id="comparisonWindow" class="pill neutral">Current run</span>
+          </div>
+          <div class="comparison-grid">
+            <article class="panel chart-panel">
+              <div class="chart-heading">
+                <h3>How much demand gets supplied?</h3>
+                <span class="unit">kWh accumulated</span>
+              </div>
+              <svg
+                id="energyChart"
+                class="chart"
+                role="img"
+                aria-label="Served and unserved energy comparison"
+              ></svg>
+              <p class="chart-explain" id="energyExplain">
+                Supplied energy is useful electricity delivered to consumers.
+                Unserved energy is the remaining gap.
+              </p>
+            </article>
+            <article class="panel chart-panel">
+              <div class="chart-heading">
+                <h3>Where does the power go?</h3>
+                <span class="unit">kW right now</span>
+              </div>
+              <svg
+                id="balanceChart"
+                class="chart"
+                role="img"
+                aria-label="Source and EV power balance"
+              ></svg>
+              <p class="chart-explain">
+                Main grid + EV power = supplied demand + feeder losses.
+              </p>
+            </article>
+          </div>
+          <div class="comparison-grid">
+            <article class="panel chart-panel">
+              <div class="chart-heading">
+                <h3>Power supplied over time</h3>
+                <span class="unit">kW · simulated minutes</span>
+              </div>
+              <svg
+                id="supplyChart"
+                class="chart"
+                role="img"
+                aria-label="Baseline and selected policy supplied power over time"
+              ></svg>
+              <p class="chart-explain">
+                Hover or focus a point for its value. EV arrivals and battery
+                limits change the support available.
+              </p>
+            </article>
+            <article class="panel chart-panel">
+              <div class="chart-heading">
+                <h3>The remaining supply gap</h3>
+                <span class="unit">kWh · cumulative</span>
+              </div>
+              <svg
+                id="gapChart"
+                class="chart"
+                role="img"
+                aria-label="Cumulative unserved energy over time"
+              ></svg>
+              <p class="chart-explain">
+                A lower curve means less demand left unmet. EV support may
+                reduce the gap without eliminating it.
+              </p>
+            </article>
+          </div>
+          <div class="comparison-grid">
+            <article class="panel chart-panel">
+              <div class="chart-heading">
+                <h3>Voltage across the neighbourhood</h3>
+                <span class="unit">per unit · bus number</span>
+              </div>
+              <svg
+                id="voltage"
+                class="chart"
+                role="img"
+                aria-label="Baseline and selected policy bus voltage profiles"
+              ></svg>
+              <p class="chart-explain">
+                1.00 pu is nominal voltage. The dashed line marks the allowed
+                minimum. Both cases can shed demand to stay safe.
+              </p>
+            </article>
+            <article class="panel chart-panel">
+              <div class="chart-heading">
+                <h3>How hard is each branch working?</h3>
+                <span class="unit">% of modelled limit</span>
+              </div>
+              <svg
+                id="loadingChart"
+                class="chart"
+                role="img"
+                aria-label="Baseline and selected policy branch loading"
+              ></svg>
+              <p class="chart-explain">
+                100% is the modelled branch limit. The dataset ratings are not a
+                verified Weasel ampacity specification.
+              </p>
+            </article>
+          </div>
+          <div class="comparison-grid">
+            <article class="panel chart-panel">
+              <div class="chart-heading">
+                <h3>EV energy: battery to neighbourhood</h3>
+                <span class="unit">kWh accumulated</span>
+              </div>
+              <svg
+                id="batteryChart"
+                class="chart"
+                role="img"
+                aria-label="EV battery and grid energy comparison"
+              ></svg>
+              <p class="chart-explain" id="batteryExplain">
+                Conversion losses mean consumers receive less energy than leaves
+                the battery. Planned travel energy is reported separately.
+              </p>
+            </article>
+            <article class="panel chart-panel">
+              <div class="chart-heading">
+                <h3>Feeder losses, with context</h3>
+                <span class="unit">kWh accumulated</span>
+              </div>
+              <svg
+                id="lossChart"
+                class="chart"
+                role="img"
+                aria-label="Network loss energy comparison"
+              ></svg>
+              <p class="chart-explain" id="lossExplain">
+                Serving more demand can increase absolute losses. A lower loss
+                alone does not prove better performance.
+              </p>
+            </article>
+          </div>
+          <article class="panel policy-lab">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">POLICY LAB</p>
+                <h3>Nearest or coordinated? Let the results decide.</h3>
+                <p>
+                  Run all three policies over the full horizon using the exact
+                  same edited scenario.
+                </p>
+              </div>
+              <button id="compare" class="primary">
+                Compare all 3 policies ↗
+              </button>
+            </div>
+            <p id="compareStatus" role="status" class="muted">
+              This creates separate reproducible experiments. Your current run
+              stays in place.
+            </p>
+            <svg
+              id="policyChart"
+              class="chart"
+              role="img"
+              aria-label="Full horizon three policy comparison"
+            ></svg>
+            <div class="scroll"><table id="policyTable"></table></div>
+          </article>
+          <details class="panel compact">
+            <summary>Exact accumulated comparison values</summary>
+            <div class="scroll"><table id="metrics"></table></div>
+          </details>
+        </section>
+        <section class="panel" id="details">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">BEHIND THE PICTURE</p>
+              <h2>Engineering details, fully visible.</h2>
+              <p>
+                All powers are three-phase totals. Expand the data you need.
+              </p>
+            </div>
+            <span id="solverBadge" class="pill neutral">Awaiting run</span>
+          </div>
+          <div id="baselineWarning" class="baseline-warning"></div>
+          <details>
+            <summary>Every bus: demand, voltage and EV power</summary>
+            <label class="compact-label"
+              >Find a bus
+              <input
+                id="busSearch"
+                type="search"
+                placeholder="e.g. 14"
+                aria-label="Filter buses by number"
+            /></label>
+            <div class="scroll"><table id="buses"></table></div>
+          </details>
+          <details>
+            <summary>Every branch: flow, current, loading and loss</summary>
+            <div class="scroll"><table id="lines"></table></div>
+          </details>
+          <details>
+            <summary>
+              Eligibility, session decisions and device messages
+            </summary>
+            <ul id="rejections"></ul>
+            <p id="outbox" class="muted"></p>
+            <p class="muted">
+              A simulator acknowledgement proves software processing, not
+              physical charger execution.
+            </p>
+          </details>
+          <details>
+            <summary>Scenario assumptions and editable inputs</summary>
+            <p id="assumptions" class="muted"></p>
+            <p class="muted">
+              Edit voltage, source cap, fleet batteries, station buses and
+              limits below. Changes apply to a new run or Policy Lab experiment.
+            </p>
+            <textarea
+              id="config"
+              aria-label="Scenario configuration"
+              spellcheck="false"
+            ></textarea>
+          </details>
+        </section>
+        <footer>
+          <span><b>GoEV</b> · Neighbourhood energy research</span
+          ><span
+            >Grid-connected simulation · No islanded backup or physical hardware
+            control</span
+          >
+        </footer>
+      </main>
+    </div>
+    <dialog id="entityDialog" aria-labelledby="entityTitle">
+      <form id="entityForm">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">CUSTOM SCENARIO</p>
+            <h2 id="entityTitle">Add EV</h2>
+          </div>
+          <button
+            id="closeEntity"
+            type="button"
+            class="ghost"
+            aria-label="Close editor"
+          >
+            ✕
+          </button>
+        </div>
+        <p id="entityHelp" class="muted"></p>
+        <div id="entityFields" class="entity-fields"></div>
+        <p id="entityError" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button id="saveEntity" type="submit" class="primary">
+            Save to scenario</button
+          ><button id="cancelEntity" type="button" class="ghost">Cancel</button>
+        </div>
+      </form>
+    </dialog>
+    <div id="chartTooltip" role="status" hidden></div>
+  </body>
+</html>

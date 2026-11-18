@@ -1,0 +1,16 @@
+{
+  "timestampUtc": "2026-10-05T16:27:46.686382+00:00",
+  "checks": {
+    "all27BranchDistancesAndStationLocations": true,
+    "liveEvDistanceInterpolation": true,
+    "timeAdvancePreservesZoom": true,
+    "customLengthRebuild": true,
+    "viewSwitchRetainsGeometry": true,
+    "offlineOverlayDistances": true,
+    "mobileNoOverflow": true
+  },
+  "maximumDistanceErrorKm": 5.891509502475856e-12,
+  "pageErrors": [],
+  "passed": true,
+  "physicalLocations": "illustrative, not surveyed"
+}

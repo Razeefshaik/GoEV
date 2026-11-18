@@ -50,4 +50,33 @@ dependencyManagement {
 
 tasks.named('test') {
     useJUnitPlatform()
+    maxHeapSize = '256m'
+    maxParallelForks = 1
+}
+
+springBoot { mainClass = 'com.goev.GoevServerApplication' }
+
+tasks.register('researchRun', JavaExec) {
+    group = 'application'
+    description = 'Standalone durable V2G research API/dashboard without PostgreSQL or Redis'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.goevresearch.ResearchApplication'
+    args '--server.port=8081'
+    maxHeapSize = '192m'
+}
+
+tasks.register('v2gBenchmark', JavaExec) {
+    group = 'verification'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.goev.v2g.BenchmarkRunner'
+    args layout.projectDirectory.dir('output/v2g').asFile.absolutePath
+    maxHeapSize = '192m'
+}
+
+tasks.register('researchJar', org.springframework.boot.gradle.tasks.bundling.BootJar) {
+    group = 'build'
+    archiveClassifier = 'research'
+    mainClass = 'com.goevresearch.ResearchApplication'
+    classpath = sourceSets.main.runtimeClasspath
+    targetJavaVersion = JavaVersion.VERSION_21
 }

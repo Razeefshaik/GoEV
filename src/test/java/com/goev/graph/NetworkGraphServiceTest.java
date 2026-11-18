@@ -66,10 +66,10 @@ class NetworkGraphServiceTest {
     }
 
     @Test
-    void headroomIsMaxLoadingMinusPeakLoadOnFeedingLine() {
-        // Line 1 (bus 1 -> bus 2): max 1.5 MVA, peak load 0.050 MVA
+    void headroomAggregatesAllCoincidentDownstreamBusPeaks() {
+        // Root line carries all receiving-bus peaks: 1.082 MVA under the unity-PF coincidence scenario.
         assertThat(graphService.headroomMva(2)).hasValueSatisfying(
-                headroom -> assertThat(headroom).isCloseTo(1.45, offset(0.0001)));
+                headroom -> assertThat(headroom).isCloseTo(0.418, offset(0.0001)));
     }
 
     @Test

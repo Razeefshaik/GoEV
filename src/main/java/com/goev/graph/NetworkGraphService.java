@@ -92,7 +92,10 @@ public class NetworkGraphService {
         if (feedingLine == null) {
             return Optional.empty();
         }
-        double staticHeadroom = feedingLine.getMaxLoadingMva() - feedingLine.getPeakLoadMva();
+        Set<Integer> subtree = downstreamBuses(feedingLine.getSeBus(),feedingLine.getReBus());
+        double coincidentPeak = lineByReBus.values().stream().filter(l -> subtree.contains(l.getReBus()))
+                .mapToDouble(Line::getPeakLoadMva).sum();
+        double staticHeadroom = feedingLine.getMaxLoadingMva() - coincidentPeak;
         double liveEvcsLoadMva = liveDownstreamEvcsLoadMva(feedingLine.getSeBus(), feedingLine.getReBus());
         return Optional.of(staticHeadroom - liveEvcsLoadMva);
     }
@@ -110,7 +113,7 @@ public class NetworkGraphService {
         return evcsLiveStateRepository.findById(evcs.getEvcsId())
                 .map(EvcsLiveState::getCurrentLoadKw)
                 .filter(Objects::nonNull)
-                .orElse(0.0);
+                .orElse(Double.POSITIVE_INFINITY); // Unknown electrical load is not zero; fail closed.
     }
 
     /** Every bus reachable from reBus without crossing back through seBus — the whole subtree that line feeds. */

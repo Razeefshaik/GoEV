@@ -153,7 +153,7 @@ class StateServiceIntegrationTest {
     @Test
     void occupySlotDecrementsThenReleaseRestoresAvailableSlots() {
         stateService.onEvcsStatus(new EvcsStatusMessage(
-                "EVCS-OCCUPY", 8, List.of("ccs"), 2, 0, 50.0, 0.0));
+                "EVCS-OCCUPY", 8, List.of("ccs"), 2, 0, 50.0, 0.0,2,List.of()));
 
         stateService.occupySlot("EVCS-OCCUPY", 1);
 
@@ -168,7 +168,7 @@ class StateServiceIntegrationTest {
     @Test
     void occupySlotNeverDropsBelowZeroEvenWithMoreOccupationsThanSlots() {
         stateService.onEvcsStatus(new EvcsStatusMessage(
-                "EVCS-OVERBOOK", 8, List.of("ccs"), 1, 0, 50.0, 0.0));
+                "EVCS-OVERBOOK", 8, List.of("ccs"), 1, 0, 50.0, 0.0,1,List.of()));
 
         stateService.occupySlot("EVCS-OVERBOOK", 2);
         stateService.occupySlot("EVCS-OVERBOOK", 2);

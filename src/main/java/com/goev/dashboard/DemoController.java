@@ -72,7 +72,7 @@ public class DemoController {
                 request.availableSlots() != null ? request.availableSlots() : 1,
                 request.queueLength() != null ? request.queueLength() : 0,
                 request.chargeRateKw() != null ? request.chargeRateKw() : 50.0,
-                0.0));
+                0.0,request.availableSlots() != null ? request.availableSlots() : 1,List.of()));
     }
 
     @PostMapping("/api/demo/request")

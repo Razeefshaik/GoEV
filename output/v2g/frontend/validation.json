@@ -1,0 +1,18 @@
+{
+  "timestampUtc": "2026-10-05T16:28:36.335127+00:00",
+  "checks": {
+    "apiValuesAndInteractiveNetwork": true,
+    "mapOverlaysAndSelection": true,
+    "playPause": true,
+    "equivalentThreePolicyComparison": true,
+    "cancelUpdatesAuthoritativeState": true,
+    "export": true,
+    "responsiveAndPresentation": true,
+    "offlineMapOverlayFallback": true,
+    "restartRestoreAndReducedMotion": true,
+    "zeroSupportCase": true
+  },
+  "pageErrors": [],
+  "passed": true,
+  "physicalHardware": "not tested"
+}

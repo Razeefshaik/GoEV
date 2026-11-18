@@ -1,0 +1,14 @@
+{
+  "timestampUtc": "2026-10-05T14:45:19.796031+00:00",
+  "passed": true,
+  "checks": [
+    "add EV and EVCS",
+    "duplicate ID and occupied-port validation",
+    "edit and browser draft restore",
+    "custom run admission and simulated discharge",
+    "remove and restore defaults",
+    "current run isolation",
+    "mobile editor"
+  ],
+  "pageErrors": []
+}

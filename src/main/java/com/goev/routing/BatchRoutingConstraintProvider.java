@@ -55,7 +55,7 @@ public class BatchRoutingConstraintProvider implements ConstraintProvider {
     }
 
     private Constraint penalizeUnassignedRequest(ConstraintFactory factory) {
-        return factory.forEach(RequestAssignment.class)
+        return factory.forEachIncludingUnassigned(RequestAssignment.class)
                 .filter(ra -> ra.getAssignedCandidate() == null)
                 .penalize(HardSoftScore.ofSoft(UNASSIGNED_PENALTY))
                 .asConstraint("Penalize unassigned request");

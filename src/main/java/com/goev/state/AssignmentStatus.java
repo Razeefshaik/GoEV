@@ -4,5 +4,6 @@ public enum AssignmentStatus {
     RESERVED,
     CONFIRMED,
     EXPIRED,
-    CANCELLED
+    CANCELLED,
+    COMPLETED
 }

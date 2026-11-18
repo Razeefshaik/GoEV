@@ -25,6 +25,7 @@ public class EvcsLiveState {
     private Double chargeRateKw;
     private Double currentLoadKw;
     private Instant lastHeartbeatAt;
+    private List<String> committedReservationIds;
 
     @TimeToLive
     private Long ttlSeconds;
@@ -82,4 +83,6 @@ public class EvcsLiveState {
     public Long getTtlSeconds() {
         return ttlSeconds;
     }
+    public List<String> getCommittedReservationIds(){return committedReservationIds;}
+    public void setCommittedReservationIds(List<String> ids){committedReservationIds=ids;}
 }

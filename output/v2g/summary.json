@@ -1,0 +1,787 @@
+{
+  "solver" : "balanced BFS; 1e-9 pu; 200 iterations; 0.001 kW balance tolerance",
+  "timestampUtc" : "2026-10-05T12:53:33.598457800Z",
+  "results" : [ {
+    "policy" : "none",
+    "metrics" : {
+      "requestedKwh" : 1541.8499999999992,
+      "servedKwh" : 1541.8499999999992,
+      "unservedKwh" : 0.0,
+      "lossKwh" : 46.89504845377535,
+      "sourceKwh" : 1588.7450483302944,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 0.0,
+      "minVoltagePu" : 0.9589538099174544,
+      "maxLoadingPercent" : 47.68846630574546,
+      "maxBalanceResidualKw" : 4.116053453628865E-8,
+      "accepted" : 0,
+      "rejected" : 0
+    },
+    "runtimeMs" : 223.0943,
+    "scenario" : "no-shortage"
+  }, {
+    "policy" : "nearest",
+    "metrics" : {
+      "requestedKwh" : 1541.8499999999992,
+      "servedKwh" : 1541.8499999999992,
+      "unservedKwh" : 0.0,
+      "lossKwh" : 46.89504845377535,
+      "sourceKwh" : 1588.7450483302944,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 0.0,
+      "minVoltagePu" : 0.9589538099174544,
+      "maxLoadingPercent" : 47.68846630574546,
+      "maxBalanceResidualKw" : 4.116053453628865E-8,
+      "accepted" : 0,
+      "rejected" : 0
+    },
+    "runtimeMs" : 91.3659,
+    "scenario" : "no-shortage"
+  }, {
+    "policy" : "coordinated",
+    "metrics" : {
+      "requestedKwh" : 1541.8499999999992,
+      "servedKwh" : 1541.8499999999992,
+      "unservedKwh" : 0.0,
+      "lossKwh" : 46.89504845377535,
+      "sourceKwh" : 1588.7450483302944,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 0.0,
+      "minVoltagePu" : 0.9589538099174544,
+      "maxLoadingPercent" : 47.68846630574546,
+      "maxBalanceResidualKw" : 4.116053453628865E-8,
+      "accepted" : 0,
+      "rejected" : 0
+    },
+    "runtimeMs" : 58.5113,
+    "scenario" : "no-shortage"
+  }, {
+    "policy" : "none",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 0
+    },
+    "runtimeMs" : 651.2281,
+    "scenario" : "moderate-shortage"
+  }, {
+    "policy" : "nearest",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1700.3233193937378,
+      "unservedKwh" : 1383.3766806062606,
+      "lossKwh" : 50.62527594483459,
+      "sourceKwh" : 1649.9999997587709,
+      "deliveredKwh" : 100.94859541491803,
+      "batteryKwh" : 112.1651060165756,
+      "travelKwh" : 3.8348939834244,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9562033211255969,
+      "maxLoadingPercent" : 51.414245785974174,
+      "maxBalanceResidualKw" : 6.501479887788264E-8,
+      "accepted" : 4,
+      "rejected" : 0
+    },
+    "runtimeMs" : 3432.395,
+    "scenario" : "moderate-shortage"
+  }, {
+    "policy" : "coordinated",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1700.3233193937378,
+      "unservedKwh" : 1383.3766806062606,
+      "lossKwh" : 50.62527594483459,
+      "sourceKwh" : 1649.9999997587709,
+      "deliveredKwh" : 100.94859541491803,
+      "batteryKwh" : 112.1651060165756,
+      "travelKwh" : 3.8348939834244,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9562033211255969,
+      "maxLoadingPercent" : 51.414245785974174,
+      "maxBalanceResidualKw" : 6.501479887788264E-8,
+      "accepted" : 4,
+      "rejected" : 0
+    },
+    "runtimeMs" : 1575.0437,
+    "scenario" : "moderate-shortage"
+  }, {
+    "policy" : "none",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 985.0926517519357,
+      "unservedKwh" : 2098.607348248063,
+      "lossKwh" : 36.76617199068253,
+      "sourceKwh" : 1021.8588234162937,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9499999902193472,
+      "maxLoadingPercent" : 30.735997308469067,
+      "maxBalanceResidualKw" : 1.0877461242841946E-7,
+      "accepted" : 0,
+      "rejected" : 0
+    },
+    "runtimeMs" : 459.946,
+    "scenario" : "weak-voltage"
+  }, {
+    "policy" : "nearest",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1089.1832986460329,
+      "unservedKwh" : 1994.5167013539656,
+      "lossKwh" : 37.13053841588628,
+      "sourceKwh" : 1025.3652413191303,
+      "deliveredKwh" : 100.94859541491803,
+      "batteryKwh" : 112.1651060165756,
+      "travelKwh" : 3.8348939834244,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9499999900017846,
+      "maxLoadingPercent" : 32.37150376862163,
+      "maxBalanceResidualKw" : 1.249498815525385E-7,
+      "accepted" : 4,
+      "rejected" : 0
+    },
+    "runtimeMs" : 2940.4572,
+    "scenario" : "weak-voltage"
+  }, {
+    "policy" : "coordinated",
+    "metrics" : {
+      "requestedKwh" : 3083.699999999999,
+      "servedKwh" : 1096.6764171447712,
+      "unservedKwh" : 1987.0235828552277,
+      "lossKwh" : 37.518886606229636,
+      "sourceKwh" : 1035.9469986136833,
+      "deliveredKwh" : 98.24830481110791,
+      "batteryKwh" : 109.16478312345323,
+      "travelKwh" : 6.8352168765468,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9499999900017846,
+      "maxLoadingPercent" : 32.20058375087823,
+      "maxBalanceResidualKw" : 1.1456433490764084E-7,
+      "accepted" : 4,
+      "rejected" : 2
+    },
+    "runtimeMs" : 2093.9099,
+    "scenario" : "weak-voltage"
+  }, {
+    "policy" : "none",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 0
+    },
+    "runtimeMs" : 193.8583,
+    "scenario" : "multiple-stations"
+  }, {
+    "policy" : "nearest",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1700.3233193937378,
+      "unservedKwh" : 1383.3766806062606,
+      "lossKwh" : 50.62527594483459,
+      "sourceKwh" : 1649.9999997587709,
+      "deliveredKwh" : 100.94859541491803,
+      "batteryKwh" : 112.1651060165756,
+      "travelKwh" : 3.8348939834244,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9562033211255969,
+      "maxLoadingPercent" : 51.414245785974174,
+      "maxBalanceResidualKw" : 6.501479887788264E-8,
+      "accepted" : 4,
+      "rejected" : 0
+    },
+    "runtimeMs" : 1476.0126,
+    "scenario" : "multiple-stations"
+  }, {
+    "policy" : "coordinated",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1700.3233193937378,
+      "unservedKwh" : 1383.3766806062606,
+      "lossKwh" : 50.62527594483459,
+      "sourceKwh" : 1649.9999997587709,
+      "deliveredKwh" : 100.94859541491803,
+      "batteryKwh" : 112.1651060165756,
+      "travelKwh" : 3.8348939834244,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9562033211255969,
+      "maxLoadingPercent" : 51.414245785974174,
+      "maxBalanceResidualKw" : 6.501479887788264E-8,
+      "accepted" : 4,
+      "rejected" : 0
+    },
+    "runtimeMs" : 1407.9825,
+    "scenario" : "multiple-stations"
+  }, {
+    "policy" : "none",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 0
+    },
+    "runtimeMs" : 152.9058,
+    "scenario" : "energy-depletion"
+  }, {
+    "policy" : "nearest",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1613.9225293557251,
+      "unservedKwh" : 1469.7774706442733,
+      "lossKwh" : 50.62606442473097,
+      "sourceKwh" : 1649.999998196857,
+      "deliveredKwh" : 14.548595414918042,
+      "batteryKwh" : 16.1651060165756,
+      "travelKwh" : 3.8348939834244,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9562033211255969,
+      "maxLoadingPercent" : 51.414245785974174,
+      "maxBalanceResidualKw" : 6.501479887788264E-8,
+      "accepted" : 4,
+      "rejected" : 0
+    },
+    "runtimeMs" : 1236.0795,
+    "scenario" : "energy-depletion"
+  }, {
+    "policy" : "coordinated",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1613.9225293557251,
+      "unservedKwh" : 1469.7774706442733,
+      "lossKwh" : 50.62606442473097,
+      "sourceKwh" : 1649.999998196857,
+      "deliveredKwh" : 14.548595414918042,
+      "batteryKwh" : 16.1651060165756,
+      "travelKwh" : 3.8348939834244,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9562033211255969,
+      "maxLoadingPercent" : 51.414245785974174,
+      "maxBalanceResidualKw" : 6.501479887788264E-8,
+      "accepted" : 4,
+      "rejected" : 0
+    },
+    "runtimeMs" : 1097.7316,
+    "scenario" : "energy-depletion"
+  }, {
+    "policy" : "none",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 0
+    },
+    "runtimeMs" : 147.6274,
+    "scenario" : "unwilling"
+  }, {
+    "policy" : "nearest",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 12
+    },
+    "runtimeMs" : 154.1202,
+    "scenario" : "unwilling"
+  }, {
+    "policy" : "coordinated",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 12
+    },
+    "runtimeMs" : 155.7681,
+    "scenario" : "unwilling"
+  }, {
+    "policy" : "none",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 0
+    },
+    "runtimeMs" : 155.2853,
+    "scenario" : "incompatible"
+  }, {
+    "policy" : "nearest",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 12
+    },
+    "runtimeMs" : 164.5391,
+    "scenario" : "incompatible"
+  }, {
+    "policy" : "coordinated",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 12
+    },
+    "runtimeMs" : 174.0053,
+    "scenario" : "incompatible"
+  }, {
+    "policy" : "none",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 0
+    },
+    "runtimeMs" : 291.6552,
+    "scenario" : "site-bottleneck"
+  }, {
+    "policy" : "nearest",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1668.2400171470754,
+      "unservedKwh" : 1415.459982852923,
+      "lossKwh" : 50.75980246603026,
+      "sourceKwh" : 1649.9999988277948,
+      "deliveredKwh" : 68.99982061493225,
+      "batteryKwh" : 76.66646734992477,
+      "travelKwh" : 2.2501345388008,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9568962683511828,
+      "maxLoadingPercent" : 50.29300479692169,
+      "maxBalanceResidualKw" : 5.948306736058839E-8,
+      "accepted" : 3,
+      "rejected" : 6
+    },
+    "runtimeMs" : 1675.9607,
+    "scenario" : "site-bottleneck"
+  }, {
+    "policy" : "coordinated",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1668.2400171470754,
+      "unservedKwh" : 1415.459982852923,
+      "lossKwh" : 50.75980246603026,
+      "sourceKwh" : 1649.9999988277948,
+      "deliveredKwh" : 68.99982061493225,
+      "batteryKwh" : 76.66646734992477,
+      "travelKwh" : 2.2501345388008,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9568962683511828,
+      "maxLoadingPercent" : 50.29300479692169,
+      "maxBalanceResidualKw" : 5.948306736058839E-8,
+      "accepted" : 3,
+      "rejected" : 6
+    },
+    "runtimeMs" : 1681.9982,
+    "scenario" : "site-bottleneck"
+  }, {
+    "policy" : "none",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 0
+    },
+    "runtimeMs" : 158.935,
+    "scenario" : "travel-reserve"
+  }, {
+    "policy" : "nearest",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 12
+    },
+    "runtimeMs" : 158.5983,
+    "scenario" : "travel-reserve"
+  }, {
+    "policy" : "coordinated",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 12
+    },
+    "runtimeMs" : 214.9526,
+    "scenario" : "travel-reserve"
+  }, {
+    "policy" : "none",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 0
+    },
+    "runtimeMs" : 173.8566,
+    "scenario" : "departure"
+  }, {
+    "policy" : "nearest",
+    "metrics" : {
+      "requestedKwh" : 3083.699999999999,
+      "servedKwh" : 1618.5408576098896,
+      "unservedKwh" : 1465.1591423901093,
+      "lossKwh" : 50.67616094575997,
+      "sourceKwh" : 1649.999998330583,
+      "deliveredKwh" : 19.217020055252,
+      "batteryKwh" : 21.352244505835557,
+      "travelKwh" : 3.8348939834244,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9562033211255969,
+      "maxLoadingPercent" : 51.414245785974174,
+      "maxBalanceResidualKw" : 6.501479887788264E-8,
+      "accepted" : 4,
+      "rejected" : 6
+    },
+    "runtimeMs" : 846.8327,
+    "scenario" : "departure"
+  }, {
+    "policy" : "coordinated",
+    "metrics" : {
+      "requestedKwh" : 3083.699999999999,
+      "servedKwh" : 1618.5408576098896,
+      "unservedKwh" : 1465.1591423901093,
+      "lossKwh" : 50.67616094575997,
+      "sourceKwh" : 1649.999998330583,
+      "deliveredKwh" : 19.217020055252,
+      "batteryKwh" : 21.352244505835557,
+      "travelKwh" : 3.8348939834244,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9562033211255969,
+      "maxLoadingPercent" : 51.414245785974174,
+      "maxBalanceResidualKw" : 6.501479887788264E-8,
+      "accepted" : 4,
+      "rejected" : 6
+    },
+    "runtimeMs" : 874.2546,
+    "scenario" : "departure"
+  }, {
+    "policy" : "none",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 0
+    },
+    "runtimeMs" : 147.5798,
+    "scenario" : "stale-telemetry"
+  }, {
+    "policy" : "nearest",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 12
+    },
+    "runtimeMs" : 152.7247,
+    "scenario" : "stale-telemetry"
+  }, {
+    "policy" : "coordinated",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 12
+    },
+    "runtimeMs" : 144.6059,
+    "scenario" : "stale-telemetry"
+  }, {
+    "policy" : "none",
+    "metrics" : {
+      "requestedKwh" : 3083.6999999999985,
+      "servedKwh" : 1599.3975397852073,
+      "unservedKwh" : 1484.3024602147912,
+      "lossKwh" : 50.60245840847679,
+      "sourceKwh" : 1649.9999980252453,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849325105,
+      "maxLoadingPercent" : 49.54528123181891,
+      "maxBalanceResidualKw" : 5.61462520920486E-8,
+      "accepted" : 0,
+      "rejected" : 0
+    },
+    "runtimeMs" : 149.1251,
+    "scenario" : "excess-injection"
+  }, {
+    "policy" : "nearest",
+    "metrics" : {
+      "requestedKwh" : 3083.699999999999,
+      "servedKwh" : 1675.410173030333,
+      "unservedKwh" : 1408.289826969666,
+      "lossKwh" : 50.86470477928243,
+      "sourceKwh" : 1649.999998721676,
+      "deliveredKwh" : 76.27487891507926,
+      "batteryKwh" : 84.74986546119918,
+      "travelKwh" : 2.2501345388008,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9550478163239949,
+      "maxLoadingPercent" : 53.28206291917408,
+      "maxBalanceResidualKw" : 7.57966915898578E-8,
+      "accepted" : 3,
+      "rejected" : 6
+    },
+    "runtimeMs" : 1036.0666,
+    "scenario" : "excess-injection"
+  }, {
+    "policy" : "coordinated",
+    "metrics" : {
+      "requestedKwh" : 3083.699999999999,
+      "servedKwh" : 1675.410173030333,
+      "unservedKwh" : 1408.289826969666,
+      "lossKwh" : 50.86470477928243,
+      "sourceKwh" : 1649.999998721676,
+      "deliveredKwh" : 76.27487891507926,
+      "batteryKwh" : 84.74986546119918,
+      "travelKwh" : 2.2501345388008,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9550478163239949,
+      "maxLoadingPercent" : 53.28206291917408,
+      "maxBalanceResidualKw" : 7.57966915898578E-8,
+      "accepted" : 3,
+      "rejected" : 6
+    },
+    "runtimeMs" : 975.6106,
+    "scenario" : "excess-injection"
+  }, {
+    "policy" : "none",
+    "metrics" : {
+      "requestedKwh" : 5242.290000000001,
+      "servedKwh" : 1599.3975407042212,
+      "unservedKwh" : 3642.8924592957796,
+      "lossKwh" : 50.60245846889696,
+      "sourceKwh" : 1649.999999004677,
+      "deliveredKwh" : 0.0,
+      "batteryKwh" : 0.0,
+      "travelKwh" : 0.0,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9573580849069877,
+      "maxLoadingPercent" : 49.5452812615196,
+      "maxBalanceResidualKw" : 5.614658249442073E-8,
+      "accepted" : 0,
+      "rejected" : 0
+    },
+    "runtimeMs" : 225.7935,
+    "scenario" : "insufficient-support"
+  }, {
+    "policy" : "nearest",
+    "metrics" : {
+      "requestedKwh" : 5242.290000000002,
+      "servedKwh" : 1700.3233158899336,
+      "unservedKwh" : 3541.966684110068,
+      "lossKwh" : 50.62527571521627,
+      "sourceKwh" : 1649.9999960253476,
+      "deliveredKwh" : 100.94859541491803,
+      "batteryKwh" : 112.1651060165756,
+      "travelKwh" : 3.8348939834244,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9562033213301616,
+      "maxLoadingPercent" : 51.41424572642826,
+      "maxBalanceResidualKw" : 6.501469940189963E-8,
+      "accepted" : 4,
+      "rejected" : 0
+    },
+    "runtimeMs" : 1881.152,
+    "scenario" : "insufficient-support"
+  }, {
+    "policy" : "coordinated",
+    "metrics" : {
+      "requestedKwh" : 5242.290000000002,
+      "servedKwh" : 1700.3233158899336,
+      "unservedKwh" : 3541.966684110068,
+      "lossKwh" : 50.62527571521627,
+      "sourceKwh" : 1649.9999960253476,
+      "deliveredKwh" : 100.94859541491803,
+      "batteryKwh" : 112.1651060165756,
+      "travelKwh" : 3.8348939834244,
+      "shortageHours" : 3.0,
+      "minVoltagePu" : 0.9562033213301616,
+      "maxLoadingPercent" : 51.41424572642826,
+      "maxBalanceResidualKw" : 6.501469940189963E-8,
+      "accepted" : 4,
+      "rejected" : 0
+    },
+    "runtimeMs" : 2118.3591,
+    "scenario" : "insufficient-support"
+  } ],
+  "seed" : 0,
+  "javaVersion" : "21.0.5"
+}

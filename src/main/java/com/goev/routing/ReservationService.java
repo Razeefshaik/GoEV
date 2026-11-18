@@ -1,96 +1,58 @@
 package com.goev.routing;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.time.Instant;
+import org.slf4j.*;
 import org.springframework.stereotype.Component;
+import org.springframework.scheduling.annotation.Scheduled;
+import com.goev.mqtt.*;
+import com.goev.state.*;
 
-import com.goev.mqtt.AssignmentResponseMessage;
-import com.goev.mqtt.ChargeRequestMessage;
-import com.goev.mqtt.EvcsCommandMessage;
-import com.goev.mqtt.EvcsCommandType;
-import com.goev.mqtt.MqttGateway;
-import com.goev.state.Assignment;
-import com.goev.state.AssignmentRepository;
-import com.goev.state.AssignmentStatus;
-import com.goev.state.StateService;
-
-/**
- * The persistence + MQTT publishing side effects shared by every
- * {@link AssignmentStrategy} — extracted so the greedy and batch strategies
- * don't duplicate how a reservation gets recorded and announced. Also fans
- * out to any {@link AssignmentListener} beans (e.g. the dashboard
- * broadcaster) with the same per-listener error isolation as
- * {@code MqttInboundRouter}.
- */
+/** Charging notifications; admission and resource ownership live in the persistent ledger. */
 @Component
-public class ReservationService {
-
-    private static final Logger log = LoggerFactory.getLogger(ReservationService.class);
-
-    private final AssignmentRepository assignmentRepository;
-    private final MqttGateway mqttGateway;
-    private final RoutingProperties properties;
+public class ReservationService implements ChargingAckHandler {
+    private static final Logger log=LoggerFactory.getLogger(ReservationService.class);
+    private final AssignmentRepository assignments;
+    private final MqttGateway mqtt;
     private final List<AssignmentListener> listeners;
-    private final StateService stateService;
-
-    public ReservationService(AssignmentRepository assignmentRepository, MqttGateway mqttGateway,
-                               RoutingProperties properties, List<AssignmentListener> listeners,
-                               StateService stateService) {
-        this.assignmentRepository = assignmentRepository;
-        this.mqttGateway = mqttGateway;
-        this.properties = properties;
-        this.listeners = listeners;
-        this.stateService = stateService;
+    private final ChargingAdmission admission;
+    public ReservationService(AssignmentRepository assignments,MqttGateway mqtt,List<AssignmentListener> listeners,ChargingAdmission admission){
+        this.assignments=assignments;this.mqtt=mqtt;this.listeners=listeners;this.admission=admission;
     }
-
-    public void reserve(ChargeRequestMessage request, RoutingCandidate candidate, String reasonCode) {
-        String evcsId = candidate.evcs().getEvcsId();
-
-        Instant reservedAt = Instant.now();
-        Instant expiresAt = reservedAt.plusSeconds(properties.getReservationTtlSeconds());
-        UUID assignmentId = UUID.randomUUID();
-
-        assignmentRepository.save(new Assignment(
-                assignmentId, request.requestId(), evcsId, reservedAt, expiresAt, AssignmentStatus.RESERVED));
-
-        // The occupation window is the reservation TTL, not a real energy-needed/charge-rate
-        // estimate — a deliberate simplification (see README) until session-level charging
-        // duration is modeled. Without this, the same slot could be handed to a second
-        // request before the first EV ever "left", since greedy only sees the EVCS's
-        // self-reported live state, and nothing decremented it here before now.
-        stateService.occupySlot(evcsId, properties.getReservationTtlSeconds());
-
-        int etaMin = (int) Math.round(candidate.distanceKm() / properties.getAssumedAvgSpeedKmh() * 60.0);
-
-        mqttGateway.publishResponse(request.evId(), new AssignmentResponseMessage(
-                request.requestId(), evcsId, candidate.distanceKm(), etaMin, expiresAt, reasonCode));
-
-        mqttGateway.publishCommand(evcsId, new EvcsCommandMessage(
-                evcsId, EvcsCommandType.RESERVE, assignmentId.toString(), request.evId(), expiresAt));
-
-        for (AssignmentListener listener : listeners) {
-            try {
-                listener.onAssignment(request, candidate, etaMin, reasonCode);
-            } catch (Exception e) {
-                log.warn("AssignmentListener {} failed to process an assignment", listener.getClass().getSimpleName(), e);
-            }
-        }
+    public void reserve(ChargeRequestMessage request,RoutingCandidate candidate,String reasonCode) {
+        var result=admission.reserve(request,candidate,reasonCode);
+        if(result.isEmpty()){reject(request);return;}
+        Assignment assignment=result.get();
+        try{publish(assignment);}catch(Exception e){log.warn("Charging command retained for retry: {}",e.getMessage());}
+        for(AssignmentListener listener:listeners)try{listener.onAssignment(request,candidate,assignment.getEtaMin(),reasonCode);}
+            catch(Exception e){log.warn("Assignment listener failed",e);}
     }
-
+    private void publish(Assignment a) {
+        if(a.getEvId()==null || !a.isCommandPending())return;
+        if("RESERVE".equals(a.getPendingCommandType()))mqtt.publishResponse(a.getEvId(),new AssignmentResponseMessage(
+            a.getRequestId(),a.getEvcsId(),a.getDistanceKm(),a.getEtaMin(),a.getExpiresAt(),a.getReasonCode()));
+        mqtt.publishCommand(a.getEvcsId(),new EvcsCommandMessage(a.getEvcsId(),EvcsCommandType.valueOf(a.getPendingCommandType()),
+            a.getAssignmentId().toString(),a.getEvId(),a.getExpiresAt()));
+    }
+    @Scheduled(fixedDelay=5000)
+    public void reconcileAndRetry() {
+        admission.reconcile();
+        for(Assignment a:assignments.findByCommandPendingTrue())try{publish(a);}catch(Exception e){log.warn("Charging outbox retry failed: {}",e.getMessage());}
+    }
+    @Override @org.springframework.transaction.annotation.Transactional
+    public void onAck(ChargingAckMessage message) {
+        if(message.timestamp()==null || Math.abs(Instant.now().getEpochSecond()-message.timestamp().getEpochSecond())>120)
+            throw new IllegalArgumentException("stale charging acknowledgement");
+        var a=assignments.lockById(UUID.fromString(message.reservationId())).orElseThrow();
+        if(!a.getEvcsId().equals(message.evcsId()))throw new IllegalArgumentException("ACK identity mismatch");
+        if(!java.util.Objects.equals(a.getPendingCommandType(),message.commandType()))return;
+        if("ACCEPTED".equals(message.result())){a.sent();assignments.save(a);}
+        else if("REJECTED".equals(message.result())){a.complete();assignments.save(a);}
+        else throw new IllegalArgumentException("unknown charging ACK result");
+    }
     public void reject(ChargeRequestMessage request) {
-        mqttGateway.publishResponse(request.evId(),
-                new AssignmentResponseMessage(request.requestId(), null, null, null, null, "no_feasible_evcs"));
-
-        for (AssignmentListener listener : listeners) {
-            try {
-                listener.onRejection(request);
-            } catch (Exception e) {
-                log.warn("AssignmentListener {} failed to process a rejection", listener.getClass().getSimpleName(), e);
-            }
-        }
+        mqtt.publishResponse(request.evId(),new AssignmentResponseMessage(request.requestId(),null,null,null,null,"no_feasible_evcs"));
+        for(AssignmentListener listener:listeners)try{listener.onRejection(request);}catch(Exception e){log.warn("Rejection listener failed",e);}
     }
 }
