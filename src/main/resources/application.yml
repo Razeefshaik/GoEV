@@ -1,23 +1,39 @@
+# Every connection setting can be overridden with an environment variable so the
+# same jar runs locally (defaults below, matching docker-compose.yml) and on Render.
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+
 spring:
   application:
     name: goev-server
   datasource:
-    url: jdbc:postgresql://localhost:5433/goev
-    username: goev
-    password: goev
+    url: ${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5433/goev}
+    username: ${DATABASE_USERNAME:goev}
+    password: ${DATABASE_PASSWORD:goev}
+    hikari:
+      maximum-pool-size: ${DATABASE_POOL_SIZE:5}
   jpa:
     hibernate:
       ddl-auto: update
     open-in-view: false
   data:
     redis:
-      host: localhost
-      port: 6379
+      # redis://[user:pass@]host:port, or rediss://... for TLS.
+      url: ${REDIS_URL:redis://localhost:6379}
 
 goev:
+  # Comma-separated browser origins allowed to call /api/** and /ws (e.g. the Netlify site).
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:8080,http://localhost:8081,http://localhost:8888}
   mqtt:
-    broker-url: tcp://localhost:1883
-    client-id: goev-server
+    # false = run without any broker (hosted demo); dashboard demo controls still work.
+    enabled: ${MQTT_ENABLED:true}
+    # tcp://host:1883 for plain MQTT, ssl://host:8883 for TLS brokers such as HiveMQ Cloud.
+    broker-url: ${MQTT_BROKER_URL:tcp://localhost:1883}
+    username: ${MQTT_USERNAME:}
+    password: ${MQTT_PASSWORD:}
+    client-id: ${MQTT_CLIENT_ID:goev-server}
     ev-status-topic: ev/+/status
     ev-request-topic: ev/+/request
     evcs-status-topic: evcs/+/status

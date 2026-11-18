@@ -1,0 +1,29 @@
+# Netlify deploys only the static frontend; the Spring Boot API runs on Render.
+# Required env var (Site configuration > Environment variables):
+#   GOEV_API_URL = https://<your-render-service>.onrender.com
+[build]
+  base = "."
+  command = "node frontend/build.mjs"
+  publish = "frontend/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Serve the V2G research page at /v2g (same URL as the Spring Boot app).
+[[redirects]]
+  from = "/v2g"
+  to = "/v2g.html"
+  status = 200
+  force = true
+
+# config.js holds the backend URL; never let browsers cache a stale one.
+[[headers]]
+  for = "/config.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

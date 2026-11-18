@@ -1,0 +1,17 @@
+.git
+.gradle
+.idea
+.vscode
+build
+bin
+var
+output
+docs
+dev-clients
+scripts
+frontend
+node_modules
+*.md
+**/__pycache__
+.env
+.env.*

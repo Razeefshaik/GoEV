@@ -1,5 +1,7 @@
 # GoEV — EV to EVCS routing system
 
+**Deploying:** frontend on Netlify, backend on Render. See [DEPLOYMENT.md](DEPLOYMENT.md).
+
 ## V2G neighbourhood support extension
 
 Use **ACSR Weasel** for the new research model (0.9291 ohm/km at 20 C).

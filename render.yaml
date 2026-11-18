@@ -1,0 +1,25 @@
+# Render Blueprint: Dashboard > New > Blueprint > pick this repo.
+# Creates only the backend web service. PostgreSQL and Redis are external
+# (e.g. Neon Postgres + Upstash Redis); paste their URLs when Render asks.
+# MQTT is off (MQTT_ENABLED=false): the hosted site is a live demo driven from the
+# dashboard's own controls. Turn it on later with MQTT_ENABLED=true + MQTT_BROKER_URL etc.
+services:
+  - type: web
+    name: goev-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v2g/scenarios
+    autoDeploy: true
+    envVars:
+      - key: GOEV_APP
+        value: full
+      - key: MQTT_ENABLED
+        value: "false"
+      - key: DATABASE_URL
+        sync: false            # postgresql://user:pass@host/db?sslmode=require
+      - key: REDIS_URL
+        sync: false            # rediss://default:pass@xxxx.upstash.io:6379
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false            # your Netlify URL, e.g. https://goev.netlify.app

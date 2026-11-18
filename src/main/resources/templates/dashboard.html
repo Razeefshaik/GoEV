@@ -337,16 +337,18 @@
 
 <div id="toastStack"></div>
 
+<script src="/config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
 <script th:inline="none">
+    const API_BASE = (window.GOEV_API_BASE || '').replace(/\/+$/, '');
     const evRows = new Map();
     const evcsRows = new Map();
     // Refresh authoritative state so expired telemetry cannot remain online indefinitely.
     setInterval(async () => {
         try {
-            const response = await fetch('/api/dashboard/snapshot');
+            const response = await fetch(API_BASE + '/api/dashboard/snapshot');
             if (!response.ok) return;
             const snapshot = await response.json();
             evRows.clear(); evcsRows.clear();
@@ -632,7 +634,7 @@
     const activeEvcsHeartbeats = new Map();
 
     function placeEvcs(body) {
-        return fetch('/api/demo/evcs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        return fetch(API_BASE + '/api/demo/evcs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
             .then(r => { if (!r.ok) throw new Error('server rejected the request'); });
     }
 
@@ -681,16 +683,16 @@
             willingness: document.getElementById('reqWillingnessInput').value,
             maxDetourKm: parseFloat(document.getElementById('reqDetourInput').value)
         };
-        fetch('/api/demo/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        fetch(API_BASE + '/api/demo/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
             .then(r => { if (!r.ok) throw new Error('server rejected the request'); toast(`Request sent for ${evId} — watch the map`); })
             .catch(err => toast('Failed to send request: ' + err.message, true));
     });
 
-    fetch('/api/network/topology')
+    fetch(API_BASE + '/api/network/topology')
         .then(r => r.json())
         .then(topology => {
             drawNetwork(topology);
-            return fetch('/api/dashboard/snapshot');
+            return fetch(API_BASE + '/api/dashboard/snapshot');
         })
         .then(r => r.json())
         .then(snapshot => {
@@ -709,7 +711,7 @@
 
     const statusEl = document.getElementById('connectionStatus');
     const client = new StompJs.Client({
-        webSocketFactory: () => new SockJS('/ws'),
+        webSocketFactory: () => new SockJS(API_BASE + '/ws'),
         reconnectDelay: 5000,
         onConnect: () => {
             statusEl.textContent = 'Connected';

@@ -12,7 +12,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootConfiguration
 @EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class,HibernateJpaAutoConfiguration.class,
     RedisAutoConfiguration.class,RedisRepositoriesAutoConfiguration.class})
-@ComponentScan("com.goev.v2g")
+@ComponentScan({"com.goev.v2g","com.goev.web"})
 @EnableScheduling
 public class ResearchApplication {
     public static void main(String[] args){SpringApplication.run(ResearchApplication.class,args);}

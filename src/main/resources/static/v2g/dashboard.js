@@ -58,7 +58,7 @@ const el = (id) => document.getElementById(id),
     ].includes(s);
 async function api(path, body) {
   const response = await fetch(
-    "/api/v2g" + path,
+    (window.GOEV_API_BASE || "").replace(/\/+$/, "") + "/api/v2g" + path,
     body === undefined
       ? {}
       : {

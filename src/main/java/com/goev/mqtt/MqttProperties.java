@@ -8,6 +8,8 @@ public class MqttProperties {
 
     private String brokerUrl = "tcp://localhost:1883";
     private String clientId = "goev-server";
+    private String username = "";
+    private String password = "";
     private String evStatusTopic = "ev/+/status";
     private String evRequestTopic = "ev/+/request";
     private String evcsStatusTopic = "evcs/+/status";
@@ -28,6 +30,22 @@ public class MqttProperties {
 
     public void setClientId(String clientId) {
         this.clientId = clientId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public String getEvStatusTopic() {
