@@ -15,9 +15,10 @@ public class DashboardController {
         this.broadcaster = broadcaster;
     }
 
+    /** The V2G research dashboard is the public landing page. */
     @GetMapping("/")
     public String dashboard() {
-        return "dashboard";
+        return "v2g";
     }
 
     @GetMapping("/api/dashboard/snapshot")

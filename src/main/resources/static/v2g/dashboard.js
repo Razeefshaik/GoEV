@@ -188,6 +188,8 @@ async function act(fn) {
   if (busy) return;
   busy = true;
   el("error").hidden = true;
+  // Empty panels show a shimmer placeholder while a request is in flight (see dashboard.css).
+  document.body.classList.add("is-fetching");
   setControls();
   try {
     await fn();
@@ -197,6 +199,7 @@ async function act(fn) {
     el("error").hidden = false;
   } finally {
     busy = false;
+    document.body.classList.remove("is-fetching");
     setControls();
   }
 }
@@ -1369,7 +1372,11 @@ async function mapView() {
             '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         },
       ).addTo(map);
+      // Shimmer behind the map until the visible tiles have arrived.
+      el("map").classList.add("map-loading");
+      tiles.on("load", () => el("map").classList.remove("map-loading"));
       tiles.on("tileerror", () => {
+        el("map").classList.remove("map-loading");
         el("mapStatus").textContent =
           "Map background unavailable. Generated bus, feeder and EV overlays remain interactive.";
       });
@@ -1606,8 +1613,13 @@ window.addEventListener(
   },
   { passive: true },
 );
-document.addEventListener("DOMContentLoaded", () =>
-  act(async () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  // A sleeping free-tier server can take ~1 min to answer; explain the wait.
+  const slowTimer = setTimeout(
+    () => document.body.classList.add("is-slow"),
+    4000,
+  );
+  await act(async () => {
     scenarios = await api("/scenarios");
     for (const s of scenarios) {
       const option = document.createElement("option");
@@ -1635,5 +1647,7 @@ document.addEventListener("DOMContentLoaded", () =>
         run = null;
       }
     }
-  }),
-);
+  });
+  clearTimeout(slowTimer);
+  document.body.classList.remove("is-loading", "is-slow");
+});

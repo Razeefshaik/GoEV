@@ -11,10 +11,10 @@
     <script defer src="/v2g/dashboard.js"></script>
     <script defer src="/v2g/customizer.js"></script>
   </head>
-  <body>
+  <body class="is-loading">
     <a class="skip" href="#main">Skip to dashboard</a>
     <aside class="sidebar">
-      <a class="brand" href="/v2g"
+      <a class="brand" href="/"
         ><span class="brand-icon">↯</span
         ><span>GoEV<span class="brand-sub">ENERGY LAB</span></span></a
       >
@@ -29,7 +29,6 @@
       <div class="side-bottom">
         <span class="live-dot"></span> SOFTWARE SIMULATION
         <p>ACSR Weasel · 28 buses<br />Grid-connected research</p>
-        <a href="/">Original charging dashboard ↗</a>
       </div>
     </aside>
     <div class="workspace">
@@ -47,6 +46,14 @@
         </div>
       </header>
       <main id="main">
+        <div class="boot-notice" role="status" aria-live="polite">
+          <span class="boot-spinner" aria-hidden="true"></span>
+          <span class="boot-text">Loading the simulation…</span>
+          <span class="boot-slow"
+            >Waking up the server. Free hosting sleeps when idle, so this can
+            take up to a minute.</span
+          >
+        </div>
         <section class="intro" id="overview">
           <div>
             <p class="eyebrow">VEHICLE-TO-GRID EXPLORER</p>

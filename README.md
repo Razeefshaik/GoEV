@@ -472,7 +472,7 @@ added for it.
     and keeps a small in-memory snapshot (latest-per-id maps + last 20
     assignments) so a freshly opened dashboard has something to show
     before the next heartbeat arrives.
-- `DashboardController` — `GET /` serves `templates/dashboard.html`;
+- `DashboardController` — `GET /` serves the V2G research page (`templates/v2g.html`);
   `GET /api/dashboard/snapshot` returns that in-memory snapshot as JSON for
   the page's initial load, before its STOMP subscriptions take over.
 - `DashboardControllerTest` — 3 tests, run for real (not needing Docker):

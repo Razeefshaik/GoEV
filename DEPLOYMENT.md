@@ -1,7 +1,7 @@
 # Deploying GoEV (Netlify frontend + Render backend, free tiers)
 
 ```
-Browser ──> Netlify (static pages: /, /v2g)
+Browser ──> Netlify (static pages: / and /v2g, both the V2G dashboard)
    │            config.js -> window.GOEV_API_BASE = "https://goev-backend.onrender.com"
    └──────> Render web service (Docker, Spring Boot)  /api/**, /ws (SockJS)
                 ├─ PostgreSQL (your own, e.g. Neon)

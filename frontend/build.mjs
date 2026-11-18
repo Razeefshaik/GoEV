@@ -4,8 +4,8 @@
 //   GOEV_API_URL=https://goev-backend.onrender.com node frontend/build.mjs
 //
 // Output: frontend/dist/
-//   index.html  <- templates/dashboard.html   (served at /)
-//   v2g.html    <- templates/v2g.html         (served at /v2g via netlify.toml)
+//   index.html  <- templates/v2g.html   (served at /)
+//   v2g.html    <- templates/v2g.html   (served at /v2g via netlify.toml)
 //   config.js   <- generated with the backend URL
 //   v2g/**      <- static/v2g/**
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -38,7 +38,7 @@ cpSync(join(resources, "static"), dist, { recursive: true });
 const stripThymeleaf = (html) =>
   html.replace(/\s+xmlns:th="[^"]*"/g, "").replace(/\s+th:inline="[^"]*"/g, "");
 
-for (const [template, out] of [["dashboard.html", "index.html"], ["v2g.html", "v2g.html"]]) {
+for (const [template, out] of [["v2g.html", "index.html"], ["v2g.html", "v2g.html"]]) {
   const html = readFileSync(join(resources, "templates", template), "utf8");
   writeFileSync(join(dist, out), stripThymeleaf(html));
 }
